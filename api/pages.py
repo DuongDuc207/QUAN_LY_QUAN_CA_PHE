@@ -33,6 +33,15 @@ def dinh_dang_thoi_gian(value):
     return "—"
 
 
+def _trang_can_quyen(template, active, quyen):
+    """Chua dang nhap -> /login; thieu quyen -> ve trang chu (khong de gap loi tu choi)."""
+    if not session.get("tai_khoan_id"):
+        return redirect(url_for("pages.login_page"))
+    if quyen not in (session.get("quyens") or []):
+        return redirect(url_for("pages.dashboard"))
+    return render_template(template, user=_current_user(), active=active)
+
+
 @pages_bp.get("/login")
 def login_page():
     if session.get("tai_khoan_id"):
@@ -85,3 +94,24 @@ def orders_page():
     if "order.view" not in (session.get("quyens") or []):
         return redirect(url_for("pages.dashboard"))
     return render_template("orders/list.html", user=_current_user(), active="orders")
+
+
+# ---------- Sprint 3: kho, cong thuc, nha cung cap, nhap hang ----------
+@pages_bp.get("/inventory")
+def inventory_page():
+    return _trang_can_quyen("inventory/list.html", "inventory", "inventory.view")
+
+
+@pages_bp.get("/recipes")
+def recipes_page():
+    return _trang_can_quyen("inventory/recipes.html", "recipes", "inventory.view")
+
+
+@pages_bp.get("/suppliers")
+def suppliers_page():
+    return _trang_can_quyen("suppliers/list.html", "suppliers", "supplier.view")
+
+
+@pages_bp.get("/purchases")
+def purchases_page():
+    return _trang_can_quyen("suppliers/purchases.html", "purchases", "supplier.view")
