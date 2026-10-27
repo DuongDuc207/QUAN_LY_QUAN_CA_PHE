@@ -232,6 +232,10 @@ h3 { font-size: 18px; margin: 0 0 8px; }
   color: var(--cf-coffee);
 }
 .badge-role::before { display: none; }
+/* Tinh trang don / thanh toan (tuong phan >= 4.5:1) */
+.badge-info { background: #e4eef7; color: #1d5a86; }
+.badge-wait { background: #fbefd9; color: #84560a; }
+.badge-muted { background: #eee8e0; color: #5b4f43; }
 
 /* Alerts */
 .alert {
@@ -488,4 +492,326 @@ h3 { font-size: 18px; margin: 0 0 8px; }
   transform: translateY(-50%);
   color: var(--cf-muted);
   pointer-events: none;
+}
+
+.toolbar input[type="date"].filter-select { min-width: 150px; }
+
+.btn-link {
+  background: transparent;
+  color: var(--cf-coffee);
+  padding: 4px 6px;
+  font-size: 13px;
+  font-weight: 600;
+  text-decoration: underline;
+}
+.btn-link:hover { background: transparent; color: var(--cf-espresso); }
+
+button:disabled, .btn[aria-disabled="true"] {
+  opacity: 0.5;
+  cursor: not-allowed;
+  transform: none;
+}
+button:disabled:hover { background: var(--cf-coffee); }
+.btn-outline:disabled:hover, .btn-icon:disabled:hover { background: transparent; }
+
+.btn-danger { background: var(--cf-danger); }
+.btn-danger:hover { background: #8f2d2d; }
+
+/* Phan trang */
+.pager {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 10px;
+  margin-top: 14px;
+  font-size: 14px;
+}
+.pager button { padding: 7px 14px; }
+
+/* ===== Ban hang (POS) ===== */
+.pos-head { display: flex; align-items: flex-end; justify-content: space-between; gap: 16px; flex-wrap: wrap; }
+
+.pos {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 370px;
+  gap: 22px;
+  align-items: start;
+}
+
+.chip-filter { display: flex; flex-wrap: wrap; gap: 8px; margin: 0 0 16px; }
+
+.chip {
+  background: var(--cf-surface);
+  color: var(--cf-coffee);
+  border: 1px solid var(--cf-border);
+  border-radius: 999px;
+  padding: 7px 15px;
+  font-size: 13.5px;
+  font-weight: 600;
+}
+.chip:hover { background: var(--cf-caramel-soft); }
+.chip[aria-pressed="true"] { background: var(--cf-coffee); color: #fff; border-color: var(--cf-coffee); }
+
+.menu-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(165px, 1fr));
+  gap: 12px;
+}
+
+.menu-tile {
+  background: var(--cf-surface);
+  color: var(--cf-text);
+  border: 1px solid var(--cf-border);
+  border-radius: var(--cf-radius);
+  padding: 15px 16px;
+  min-height: 108px;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 8px;
+  text-align: left;
+  box-shadow: var(--cf-shadow-sm);
+  position: relative;
+  padding-right: 40px;
+}
+.menu-tile:hover { background: var(--cf-surface-alt); border-color: var(--cf-caramel); }
+.menu-tile .tile-name { font-weight: 650; color: var(--cf-espresso); font-size: 14.5px; line-height: 1.35; }
+.menu-tile .tile-group { font-size: 12px; color: var(--cf-muted); font-weight: 500; }
+.menu-tile .tile-price { font-weight: 700; color: var(--cf-coffee); font-size: 15px; }
+.menu-tile .tile-count {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  min-width: 24px;
+  height: 24px;
+  padding: 0 7px;
+  border-radius: 999px;
+  background: var(--cf-coffee);
+  color: #fff;
+  font-size: 12.5px;
+  font-weight: 700;
+  display: grid;
+  place-items: center;
+}
+
+.pos-cart {
+  background: var(--cf-surface);
+  border: 1px solid var(--cf-border);
+  border-radius: var(--cf-radius);
+  box-shadow: var(--cf-shadow);
+  padding: 18px 18px 20px;
+  position: sticky;
+  top: 82px;
+  max-height: calc(100vh - 100px);
+  display: flex;
+  flex-direction: column;
+}
+
+.cart-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px; }
+.cart-head h3 { margin: 0; }
+
+.cart-list { overflow-y: auto; flex: 1; min-height: 80px; margin: 0 -4px; padding: 0 4px; }
+
+.cart-empty {
+  text-align: center;
+  color: var(--cf-muted);
+  padding: 30px 10px;
+  font-size: 14px;
+}
+
+.cart-line {
+  border-bottom: 1px dashed var(--cf-border);
+  padding: 11px 0;
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 6px 10px;
+  align-items: center;
+}
+.cart-line:last-child { border-bottom: none; }
+.cart-line .line-name { font-weight: 600; color: var(--cf-espresso); font-size: 14px; }
+.cart-line .line-price { color: var(--cf-muted); font-size: 12.5px; }
+.cart-line .line-total { font-weight: 700; color: var(--cf-espresso); font-size: 14px; text-align: right; }
+.cart-line .line-note {
+  grid-column: 1 / -1;
+  margin: 0;
+  padding: 6px 10px;
+  font-size: 13px;
+}
+
+.stepper { display: inline-flex; align-items: center; gap: 2px; }
+.stepper button {
+  width: 30px;
+  height: 30px;
+  padding: 0;
+  justify-content: center;
+  background: var(--cf-surface-alt);
+  color: var(--cf-coffee);
+  border: 1px solid var(--cf-border);
+  border-radius: 8px;
+  font-size: 16px;
+}
+.stepper button:hover { background: var(--cf-caramel-soft); }
+.stepper .qty { min-width: 32px; text-align: center; font-weight: 700; font-variant-numeric: tabular-nums; }
+
+.cart-note { display: block; margin: 12px 0 0; font-weight: 600; font-size: 13.5px; color: var(--cf-espresso); }
+.cart-note textarea { resize: vertical; }
+
+.cart-total {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  border-top: 1px solid var(--cf-border);
+  margin-top: 14px;
+  padding-top: 12px;
+  font-size: 15px;
+}
+.cart-total strong { font-size: 24px; color: var(--cf-espresso); letter-spacing: -0.01em; }
+
+.btn-block { width: 100%; justify-content: center; padding: 13px; font-size: 15.5px; margin-top: 12px; }
+
+/* ===== Chi tiet don ===== */
+.order-meta { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
+
+.line-table { width: 100%; border-collapse: collapse; font-size: 14px; margin: 6px 0 4px; }
+.line-table th {
+  text-align: left;
+  font-weight: 600;
+  color: var(--cf-muted);
+  font-size: 12.5px;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  padding: 8px 6px;
+  border-bottom: 1px solid var(--cf-border);
+}
+.line-table td { padding: 10px 6px; border-bottom: 1px dashed var(--cf-border); vertical-align: top; }
+.line-table tr:last-child td { border-bottom: none; }
+.line-table .col-num { white-space: nowrap; }
+
+.sum-box {
+  background: var(--cf-surface-alt);
+  border-radius: var(--cf-radius-sm);
+  padding: 12px 14px;
+  margin: 10px 0 4px;
+  display: grid;
+  gap: 4px;
+  font-size: 14px;
+}
+.sum-box .sum-row { display: flex; justify-content: space-between; }
+.sum-box .sum-row.grand { font-size: 17px; font-weight: 700; color: var(--cf-espresso); border-top: 1px solid var(--cf-border); padding-top: 6px; margin-top: 2px; }
+
+.quick-add { display: flex; gap: 8px; margin: 10px 0 0; align-items: center; }
+.quick-add select { margin: 0; flex: 1; }
+.quick-add input { margin: 0; width: 76px; }
+.quick-add button { padding: 10px 14px; }
+
+.sub-title {
+  margin: 20px 0 8px;
+  font-size: 13px;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--cf-muted);
+  font-weight: 600;
+}
+
+.pay-item {
+  border: 1px solid var(--cf-border);
+  border-radius: var(--cf-radius-sm);
+  padding: 10px 12px;
+  margin-bottom: 8px;
+  font-size: 14px;
+}
+.pay-item .pay-top { display: flex; justify-content: space-between; gap: 10px; align-items: center; }
+.pay-item .pay-sub { color: var(--cf-muted); font-size: 12.5px; margin-top: 3px; }
+
+.note-box {
+  background: var(--cf-surface-alt);
+  border-left: 3px solid var(--cf-caramel);
+  border-radius: 6px;
+  padding: 8px 12px;
+  font-size: 14px;
+  margin: 8px 0;
+}
+.note-box.danger { border-left-color: var(--cf-danger); background: var(--cf-danger-bg); color: var(--cf-danger); }
+
+.modal-foot.wrap { flex-wrap: wrap; justify-content: flex-start; }
+.modal-foot .spacer { flex: 1; }
+
+/* ===== Thu tien ===== */
+.amount-due {
+  text-align: center;
+  background: var(--cf-surface-alt);
+  border-radius: var(--cf-radius);
+  padding: 14px;
+  margin-bottom: 16px;
+}
+.amount-due .label { color: var(--cf-muted); font-size: 13px; }
+.amount-due .value { font-size: 30px; font-weight: 700; color: var(--cf-espresso); letter-spacing: -0.02em; }
+
+.method-group { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin: 6px 0 16px; border: none; padding: 0; }
+.method-group legend { font-weight: 600; font-size: 13.5px; color: var(--cf-espresso); margin-bottom: 6px; padding: 0; }
+.method-option {
+  border: 1.5px solid var(--cf-border);
+  border-radius: var(--cf-radius-sm);
+  padding: 11px 8px;
+  text-align: center;
+  cursor: pointer;
+  font-weight: 600;
+  font-size: 14px;
+  color: var(--cf-coffee);
+  margin: 0 !important;
+}
+.method-option input { position: absolute; opacity: 0; width: 1px; height: 1px; margin: 0; }
+.method-option:has(input:checked) { border-color: var(--cf-coffee); background: var(--cf-caramel-soft); color: var(--cf-espresso); }
+.method-option:has(input:focus-visible) { box-shadow: 0 0 0 3px rgba(192, 138, 67, 0.35); }
+
+.change-row { display: flex; justify-content: space-between; font-size: 15px; margin: -6px 0 12px; }
+.change-row strong { color: var(--cf-success); font-size: 17px; }
+.change-row.thieu strong { color: var(--cf-danger); }
+
+.quick-cash { display: flex; flex-wrap: wrap; gap: 6px; margin: -8px 0 14px; }
+.quick-cash button { padding: 6px 11px; font-size: 13px; width: auto; margin: 0; }
+.reason-chips button { width: auto; margin: 0; }
+.method-option { position: relative; }
+
+.success-box { text-align: center; padding: 10px 0 4px; }
+.success-box .tick {
+  width: 56px;
+  height: 56px;
+  border-radius: 50%;
+  background: var(--cf-success-bg);
+  color: var(--cf-success);
+  display: grid;
+  place-items: center;
+  font-size: 28px;
+  margin: 0 auto 10px;
+}
+
+.reason-chips { display: flex; flex-wrap: wrap; gap: 6px; margin: 0 0 10px; }
+
+/* ===== Hoa don xem truoc ===== */
+.receipt {
+  font-family: "Consolas", "Courier New", monospace;
+  font-size: 13.5px;
+  background: #fffdf8;
+  border: 1px dashed var(--cf-border);
+  border-radius: 8px;
+  padding: 16px 18px;
+}
+.receipt .r-center { text-align: center; }
+.receipt .r-shop { font-size: 17px; font-weight: 700; }
+.receipt .r-row { display: flex; justify-content: space-between; gap: 10px; }
+.receipt .r-line { border-top: 1px dashed #cdbfa8; margin: 8px 0; }
+.receipt .r-item-sub { color: var(--cf-muted); font-size: 12.5px; }
+.receipt .r-grand { font-weight: 700; font-size: 15.5px; }
+
+@media (max-width: 900px) {
+  .pos { grid-template-columns: 1fr; }
+  .pos-cart { position: static; max-height: none; }
+}
+
+@media (max-width: 640px) {
+  .form-row { grid-template-columns: 1fr; }
+  .method-group { grid-template-columns: 1fr; }
+  .table-wrap { overflow-x: auto; }
 }

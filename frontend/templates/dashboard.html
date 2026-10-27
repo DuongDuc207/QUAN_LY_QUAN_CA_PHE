@@ -26,6 +26,22 @@
 
 <h3 class="section-title">Lối tắt</h3>
 <div class="cards">
+  {% if user and 'order.manage' in (user.quyens or []) %}
+  <div class="card">
+    <span class="card-icon">🧾</span>
+    <h3>Bán hàng</h3>
+    <p>Chọn món khách gọi, tạo đơn và thu tiền ngay tại quầy.</p>
+    <a class="btn btn-self" href="/pos">Mở bán hàng</a>
+  </div>
+  {% endif %}
+  {% if user and 'order.view' in (user.quyens or []) %}
+  <div class="card">
+    <span class="card-icon">☕</span>
+    <h3>Đơn hàng</h3>
+    <p>Theo dõi đơn đang pha chế, thu tiền, huỷ đơn và in lại hoá đơn.</p>
+    <a class="btn btn-self" href="/orders">Mở đơn hàng</a>
+  </div>
+  {% endif %}
   <div class="card">
     <span class="card-icon">📋</span>
     <h3>Thực đơn</h3>

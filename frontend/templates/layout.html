@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>{% block title %}Cà Phê Việt{% endblock %}</title>
   <link rel="stylesheet" href="{{ url_for('static', filename='css/layout.css') }}">
-  <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css', v=3) }}">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css', v=4) }}">
   <link rel="stylesheet" href="{{ url_for('static', filename='css/forms.css') }}">
 </head>
 <body>
@@ -16,6 +16,12 @@
     </div>
     <nav class="nav">
       <a href="/dashboard"{% if active == 'dashboard' %} class="active"{% endif %}>Trang chủ</a>
+      {% if user and 'order.manage' in (user.quyens or []) %}
+        <a href="/pos"{% if active == 'pos' %} class="active"{% endif %}>Bán hàng</a>
+      {% endif %}
+      {% if user and 'order.view' in (user.quyens or []) %}
+        <a href="/orders"{% if active == 'orders' %} class="active"{% endif %}>Đơn hàng</a>
+      {% endif %}
       {% if user and 'account.view' in (user.quyens or []) %}
         <a href="/accounts"{% if active == 'accounts' %} class="active"{% endif %}>Nhân sự</a>
       {% endif %}
@@ -39,7 +45,8 @@
   <main class="container">
     {% block content %}{% endblock %}
   </main>
-  <script src="{{ url_for('static', filename='js/main.js', v=3) }}"></script>
+  <script>window.QUYEN = {{ ((user.quyens if user else []) or [])|tojson }};</script>
+  <script src="{{ url_for('static', filename='js/main.js', v=4) }}"></script>
   {% block scripts %}{% endblock %}
 </body>
 </html>

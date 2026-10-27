@@ -1,0 +1,259 @@
+{% extends "layout.html" %}
+{% block title %}Bán hàng - Cà Phê Việt{% endblock %}
+{% block content %}
+{% set co_thu_tien = 'payment.manage' in (user.quyens or []) %}
+
+<div class="page-head pos-head">
+  <div>
+    <h2>Bán hàng</h2>
+    <p class="muted">Bấm vào món khách gọi, kiểm tra lại đơn bên phải rồi tạo đơn.</p>
+  </div>
+  {% if 'order.view' in (user.quyens or []) %}
+    <a class="btn btn-outline" href="/orders">Xem đơn hàng</a>
+  {% endif %}
+</div>
+
+<div id="page-error" class="alert error hidden"></div>
+
+<div class="pos">
+  <section aria-label="Thực đơn">
+    <div class="toolbar">
+      <div class="search-box">
+        <span class="search-icon">🔍</span>
+        <input id="search-input" type="search" placeholder="Tìm món (gõ không dấu cũng được)" aria-label="Tìm món">
+      </div>
+    </div>
+    <div class="chip-filter" id="group-chips" role="group" aria-label="Lọc theo nhóm món"></div>
+    <div class="menu-grid" id="menu-grid"><p class="muted">Đang tải thực đơn...</p></div>
+  </section>
+
+  <aside class="pos-cart" aria-label="Đơn đang chọn">
+    <div class="cart-head">
+      <h3>Đơn mới</h3>
+      <button type="button" class="btn-link" id="btn-clear">Xoá hết</button>
+    </div>
+    <div class="cart-list" id="cart-list"></div>
+    <label class="cart-note">Ghi chú cho đơn
+      <textarea id="order-note" rows="2" maxlength="500" placeholder="Ví dụ: Bàn 5, mang đi..."></textarea>
+    </label>
+    <div class="cart-total">
+      <span>Tạm tính <span class="muted small" id="cart-count"></span></span>
+      <strong id="cart-total" aria-live="polite">0 ₫</strong>
+    </div>
+    <div id="cart-error" class="alert error hidden" role="alert" style="margin:10px 0 0"></div>
+    {% if co_thu_tien %}
+      <button type="button" class="btn-block" id="btn-create-pay" disabled>Tạo đơn &amp; thu tiền</button>
+      <button type="button" class="btn-outline btn-block" id="btn-create" style="margin-top:8px" disabled>Chỉ tạo đơn, thu sau</button>
+    {% else %}
+      <button type="button" class="btn-block" id="btn-create" disabled>Tạo đơn</button>
+    {% endif %}
+  </aside>
+</div>
+
+{% include "orders/_modals.html" %}
+{% endblock %}
+
+{% block scripts %}
+<script src="{{ url_for('static', filename='js/orders.js', v=4) }}"></script>
+<script>
+  const grid = document.getElementById("menu-grid");
+  const chips = document.getElementById("group-chips");
+  const cartList = document.getElementById("cart-list");
+  const cartError = document.getElementById("cart-error");
+  const searchInput = document.getElementById("search-input");
+  const noteInput = document.getElementById("order-note");
+  const btnCreate = document.getElementById("btn-create");
+  const btnCreatePay = document.getElementById("btn-create-pay");
+
+  let dsMon = [];
+  let nhomChon = "";
+  let gio = [];   // {key, mon_id, ten, gia, so_luong, ghi_chu, moGhiChu}
+  let dem = 0;
+
+  /* ===== Thuc don ===== */
+  function veNhom() {
+    const nhom = new Map();
+    dsMon.forEach((m) => nhom.set(String(m.DanhMucID), m.TenDanhMuc));
+    if (nhom.size < 2) { chips.innerHTML = ""; return; }
+    chips.innerHTML = [["", "Tất cả"], ...nhom].map(([id, ten]) =>
+      `<button type="button" class="chip" data-nhom="${id}" aria-pressed="${id === nhomChon}">${escapeHtml(ten)}</button>`).join("");
+  }
+
+  function veMenu() {
+    if (!dsMon.length) {
+      grid.innerHTML = `<div class="card" style="grid-column:1/-1">
+        <span class="card-icon">📋</span>
+        <h3>Chưa có món nào đang bán</h3>
+        <p>Thêm nhóm món và món ở trang Thực đơn, sau đó quay lại đây để bán hàng.</p>
+        ${DonHang.coQuyen("menu.manage") ? `<a class="btn btn-self" href="/menu">Mở thực đơn</a>` : ""}
+      </div>`;
+      return;
+    }
+    const q = boDau(searchInput.value.trim());
+    const rows = dsMon.filter((m) =>
+      (!nhomChon || String(m.DanhMucID) === nhomChon) && (!q || boDau(m.TenMon).includes(q)));
+    if (!rows.length) {
+      grid.innerHTML = `<p class="muted" style="grid-column:1/-1">Không tìm thấy món phù hợp.</p>`;
+      return;
+    }
+    const daChon = {};
+    gio.forEach((g) => { daChon[g.mon_id] = (daChon[g.mon_id] || 0) + g.so_luong; });
+    grid.innerHTML = rows.map((m) => `
+      <button type="button" class="menu-tile" data-mon="${m.MonID}"
+              aria-label="Thêm ${escapeHtml(m.TenMon)}, giá ${dinhDangGia(m.GiaBan)}${daChon[m.MonID] ? ", đã chọn " + daChon[m.MonID] : ""}">
+        ${daChon[m.MonID] ? `<span class="tile-count" aria-hidden="true">${daChon[m.MonID]}</span>` : ""}
+        <span><span class="tile-name">${escapeHtml(m.TenMon)}</span><br>
+          <span class="tile-group">${escapeHtml(m.TenDanhMuc || "")}</span></span>
+        <span class="tile-price">${dinhDangGia(m.GiaBan)}</span>
+      </button>`).join("");
+  }
+
+  async function loadMenu() {
+    const r = await apiGoi("GET", "/api/v1/menu?dang_ban=1&per_page=100");
+    if (!r.ok) {
+      if (kiemTraHetPhien(r.status)) return;
+      const err = document.getElementById("page-error");
+      err.textContent = thongBaoLoi(r.status, "thực đơn");
+      err.classList.remove("hidden");
+      grid.innerHTML = "";
+      return;
+    }
+    dsMon = (r.data.items || []).slice().sort((a, b) =>
+      String(a.TenDanhMuc).localeCompare(String(b.TenDanhMuc), "vi") || String(a.TenMon).localeCompare(String(b.TenMon), "vi"));
+    // Mon trong gio da ngung ban thi bo ra, tranh tao don loi.
+    const conBan = new Set(dsMon.map((m) => m.MonID));
+    const truoc = gio.length;
+    gio = gio.filter((g) => conBan.has(g.mon_id));
+    if (gio.length < truoc) hienToast("Có món vừa ngừng bán nên đã được bỏ khỏi đơn.");
+    veNhom();
+    veMenu();
+    veGio();
+  }
+
+  /* ===== Gio hang ===== */
+  function themMon(id) {
+    const m = dsMon.find((x) => String(x.MonID) === String(id));
+    if (!m) return;
+    const g = gio.find((x) => x.mon_id === m.MonID && !x.ghi_chu);
+    if (g) {
+      if (g.so_luong < 999) g.so_luong += 1;
+    } else {
+      gio.push({key: ++dem, mon_id: m.MonID, ten: m.TenMon, gia: Number(m.GiaBan), so_luong: 1, ghi_chu: "", moGhiChu: false});
+    }
+    cartError.classList.add("hidden");
+    veGio();
+    veMenu();
+  }
+
+  function veGio() {
+    if (!gio.length) {
+      cartList.innerHTML = `<div class="cart-empty">Chưa có món nào.<br>Bấm vào món bên trái để thêm vào đơn.</div>`;
+    } else {
+      cartList.innerHTML = gio.map((g) => {
+        const ten = escapeHtml(g.ten);
+        const moNote = g.ghi_chu || g.moGhiChu;
+        return `<div class="cart-line">
+          <div class="line-name">${ten}</div>
+          <span class="stepper">
+            <button type="button" data-giam="${g.key}" aria-label="Bớt 1 ${ten}">−</button>
+            <span class="qty">${g.so_luong}</span>
+            <button type="button" data-tang="${g.key}" aria-label="Thêm 1 ${ten}">+</button>
+          </span>
+          <div class="line-price">${dinhDangGia(g.gia)} ·
+            <button type="button" class="btn-link" data-ghi-chu="${g.key}" style="padding:0">${moNote ? "Ghi chú" : "+ Ghi chú"}</button>
+          </div>
+          <div class="line-total">${dinhDangGia(g.gia * g.so_luong)}</div>
+          ${moNote ? `<input class="line-note" type="text" maxlength="255" data-note="${g.key}"
+                value="${escapeHtml(g.ghi_chu)}" placeholder="Ít đá, ít đường..." aria-label="Ghi chú cho ${ten}">` : ""}
+        </div>`;
+      }).join("");
+    }
+    const tong = gio.reduce((s, g) => s + g.gia * g.so_luong, 0);
+    const soMon = gio.reduce((s, g) => s + g.so_luong, 0);
+    document.getElementById("cart-total").textContent = dinhDangGia(tong);
+    document.getElementById("cart-count").textContent = soMon ? `(${soMon} món)` : "";
+    [btnCreate, btnCreatePay].forEach((b) => { if (b) b.disabled = !gio.length; });
+  }
+
+  cartList.addEventListener("click", (e) => {
+    const b = e.target.closest("button");
+    if (!b) return;
+    const key = Number(b.dataset.tang || b.dataset.giam || b.dataset.ghiChu);
+    const g = gio.find((x) => x.key === key);
+    if (!g) return;
+    if (b.dataset.tang) {
+      if (g.so_luong < 999) g.so_luong += 1;
+    } else if (b.dataset.giam) {
+      g.so_luong -= 1;
+      if (g.so_luong < 1) gio = gio.filter((x) => x !== g);
+    } else if (b.dataset.ghiChu) {
+      g.moGhiChu = true;
+      veGio();
+      const input = cartList.querySelector(`[data-note="${key}"]`);
+      if (input) input.focus();
+      return;
+    }
+    veGio();
+    veMenu();
+  });
+
+  // Go ghi chu khong ve lai danh sach de khong mat con tro.
+  cartList.addEventListener("input", (e) => {
+    const g = gio.find((x) => x.key === Number(e.target.dataset.note));
+    if (g) g.ghi_chu = e.target.value;
+  });
+
+  document.getElementById("btn-clear").addEventListener("click", () => {
+    if (!gio.length) return;
+    if (!xacNhan("Xoá hết các món đang chọn?")) return;
+    gio = [];
+    noteInput.value = "";
+    cartError.classList.add("hidden");
+    veGio();
+    veMenu();
+  });
+
+  async function taoDon(thuTien) {
+    if (!gio.length) return;
+    cartError.classList.add("hidden");
+    [btnCreate, btnCreatePay].forEach((b) => { if (b) b.disabled = true; });
+    const r = await apiGoi("POST", "/api/v1/orders", {
+      items: gio.map((g) => ({mon_id: g.mon_id, so_luong: g.so_luong, ghi_chu: g.ghi_chu.trim()})),
+      ghi_chu: noteInput.value.trim(),
+    });
+    if (!r.ok) {
+      veGio();
+      if (kiemTraHetPhien(r.status)) return;
+      cartError.textContent = r.loi;
+      cartError.classList.remove("hidden");
+      loadMenu();  // gia / tinh trang mon co the vua doi
+      return;
+    }
+    gio = [];
+    noteInput.value = "";
+    veGio();
+    veMenu();
+    hienToast(`Đã tạo đơn ${r.data.MaDonHang}.`);
+    if (thuTien) DonHang.moVaThuTien(r.data.DonHangID);
+  }
+
+  /* ===== Su kien ===== */
+  grid.addEventListener("click", (e) => {
+    const b = e.target.closest("button[data-mon]");
+    if (b) themMon(b.dataset.mon);
+  });
+  chips.addEventListener("click", (e) => {
+    const b = e.target.closest("button[data-nhom]");
+    if (!b) return;
+    nhomChon = b.dataset.nhom;
+    veNhom();
+    veMenu();
+  });
+  searchInput.addEventListener("input", veMenu);
+  if (btnCreate) btnCreate.addEventListener("click", () => taoDon(false));
+  if (btnCreatePay) btnCreatePay.addEventListener("click", () => taoDon(true));
+
+  veGio();
+  loadMenu();
+</script>
+{% endblock %}

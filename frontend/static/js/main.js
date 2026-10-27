@@ -13,6 +13,11 @@ const NHAN_QUYEN = {
   "role.manage": "Phân quyền theo vị trí",
   "menu.view": "Xem thực đơn",
   "menu.manage": "Quản lý thực đơn và nhóm món",
+  "order.view": "Xem đơn hàng",
+  "order.manage": "Bán hàng: tạo đơn, sửa món, chuyển bước pha chế",
+  "order.cancel": "Huỷ đơn hàng",
+  "payment.manage": "Thu tiền và in hoá đơn",
+  "payment.refund": "Hoàn tiền cho khách",
 };
 
 function nhanQuyen(ten) {
@@ -42,6 +47,45 @@ const DIEN_GIAI_LOI = [
   ["mon khong ton tai", "Không tìm thấy món này."],
   ["gia ban khong duoc am", "Giá bán không được là số âm."],
   ["gia ban khong hop le", "Giá bán chưa hợp lệ. Vui lòng nhập một con số."],
+  // Don hang
+  ["muon bo het mon thi hay huy don", "Đơn cần còn ít nhất 1 món. Nếu khách không lấy nữa, hãy huỷ đơn."],
+  ["don hang phai co it nhat 1 mon", "Đơn cần có ít nhất 1 món."],
+  ["so luong phai la so nguyen", "Số lượng phải là số nguyên từ 1 đến 999."],
+  ["mon dang tam ngung ban", "Có món đang tạm ngưng bán. Vui lòng bỏ món đó ra khỏi đơn."],
+  ["mon trong don khong ton tai", "Món này không còn trong đơn. Vui lòng tải lại."],
+  ["danh sach mon khong hop le", "Danh sách món chưa hợp lệ. Vui lòng tải lại trang."],
+  ["don hang khong ton tai", "Không tìm thấy đơn hàng."],
+  ["don da thu tien hoac dang cho xac nhan", "Đơn đã thu tiền hoặc đang chờ xác nhận thanh toán nên không sửa món được."],
+  ["don da bat dau pha che", "Đơn đã bắt đầu pha chế nên không sửa món được."],
+  ["trang thai don khong hop le", "Tình trạng đơn không hợp lệ."],
+  ["huy don phai kem ly do", "Vui lòng huỷ đơn kèm lý do."],
+  ["khong the chuyen don sang trang thai nay", "Đơn vừa được người khác cập nhật. Vui lòng tải lại."],
+  ["ly do huy la bat buoc", "Vui lòng nhập lý do huỷ đơn."],
+  ["don hang da huy truoc do", "Đơn này đã được huỷ trước đó."],
+  ["don da hoan thanh, khong the huy", "Đơn đã hoàn thành nên không huỷ được. Nếu khách trả lại, hãy hoàn tiền."],
+  ["can hoan tien cho khach truoc khi huy", "Đơn đã thu tiền. Hãy chọn hoàn tiền cho khách khi huỷ."],
+  ["khong co quyen hoan tien", "Bạn không có quyền hoàn tiền. Vui lòng nhờ quản lý."],
+  ["ngay khong hop le", "Ngày chưa hợp lệ."],
+  // Thanh toan & hoa don
+  ["phuong thuc thanh toan khong hop le", "Vui lòng chọn hình thức thanh toán."],
+  ["don hang da huy, khong the thanh toan", "Đơn đã huỷ nên không thanh toán được."],
+  ["don dang co giao dich cho xac nhan", "Đơn đang có một lần thu tiền chờ xác nhận. Hãy xác nhận hoặc báo không thành công trước."],
+  ["don hang da duoc thanh toan", "Đơn này đã được thanh toán."],
+  ["chua co mon nao de thanh toan", "Đơn chưa có món nào để thanh toán."],
+  ["so tien thanh toan khong khop", "Số tiền không khớp với số cần thu. Vui lòng tải lại đơn."],
+  ["ma giao dich da duoc su dung", "Mã giao dịch này đã được dùng cho lần thanh toán khác."],
+  ["du lieu thanh toan khong hop le", "Thông tin thanh toán chưa hợp lệ."],
+  ["giao dich thanh toan khong ton tai", "Không tìm thấy lần thanh toán này."],
+  ["giao dich nay da duoc xu ly truoc do", "Lần thanh toán này đã được xử lý rồi. Vui lòng tải lại."],
+  ["can nhap ma giao dich", "Vui lòng nhập mã giao dịch ngân hàng."],
+  ["ly do hoan tien la bat buoc", "Vui lòng nhập lý do hoàn tiền."],
+  ["so tien hoan khong hop le", "Số tiền hoàn chưa hợp lệ."],
+  ["so tien hoan phai lon hon 0", "Số tiền hoàn phải lớn hơn 0."],
+  ["so tien hoan vuot qua", "Số tiền hoàn vượt quá số tiền còn có thể hoàn."],
+  ["chi hoan tien cho giao dich da thanh toan", "Chỉ hoàn tiền được cho lần thanh toán đã thu thành công."],
+  ["so tien khong hop le", "Số tiền chưa hợp lệ."],
+  ["hoa don khong ton tai", "Không tìm thấy hoá đơn."],
+  ["chua co hoa don", "Đơn chưa thanh toán nên chưa có hoá đơn."],
   ["khong co gi de cap nhat", "Bạn chưa thay đổi thông tin nào."],
   ["khong co quyen", "Bạn không có quyền thực hiện việc này."],
   ["chua dang nhap", "Phiên làm việc đã kết thúc. Vui lòng đăng nhập lại."],
@@ -107,6 +151,109 @@ function maTinhTrang(luaChon) {
 /** Ma he thong tuong ung khi bat/tat tai khoan. */
 function maDoiTinhTrang(dangLam) {
   return dangLam ? MA_TAM_NGUNG : MA_DANG_LAM;
+}
+
+/* Ma tinh trang don hang / thanh toan -> nhan + mau huy hieu. Chi dung trong file nay
+   va qua cac ham ben duoi, template khong viet ma truc tiep. */
+const TINH_TRANG_DON = {
+  MOI: {nhan: "Mới tạo", mau: "badge-info"},
+  CHO_PHA_CHE: {nhan: "Chờ pha chế", mau: "badge-wait"},
+  DANG_PHA_CHE: {nhan: "Đang pha chế", mau: "badge-wait"},
+  HOAN_THANH: {nhan: "Hoàn thành", mau: "badge-on"},
+  DA_HUY: {nhan: "Đã huỷ", mau: "badge-off"},
+};
+
+/* Buoc tiep theo cua don: nhan nut bam. */
+const BUOC_TIEP_DON = {
+  MOI: {ma: "CHO_PHA_CHE", nut: "Gửi pha chế"},
+  CHO_PHA_CHE: {ma: "DANG_PHA_CHE", nut: "Bắt đầu pha"},
+  DANG_PHA_CHE: {ma: "HOAN_THANH", nut: "Hoàn thành đơn"},
+};
+
+const TINH_TRANG_THU_TIEN = {
+  CHUA_THANH_TOAN: {nhan: "Chưa thu tiền", mau: "badge-wait"},
+  CHO_XAC_NHAN: {nhan: "Chờ xác nhận", mau: "badge-info"},
+  THANH_CONG: {nhan: "Đã thu tiền", mau: "badge-on"},
+  THAT_BAI: {nhan: "Không thành công", mau: "badge-off"},
+  HOAN_MOT_PHAN: {nhan: "Đã hoàn một phần", mau: "badge-muted"},
+  DA_HOAN_TIEN: {nhan: "Đã hoàn tiền", mau: "badge-muted"},
+};
+
+const TINH_TRANG_HOA_DON = {
+  DA_THANH_TOAN: "Đã thanh toán",
+  HOAN_MOT_PHAN: "Đã hoàn một phần",
+  DA_HOAN_TIEN: "Đã hoàn tiền",
+};
+
+const HINH_THUC_THANH_TOAN = {
+  TIEN_MAT: "Tiền mặt",
+  CHUYEN_KHOAN: "Chuyển khoản",
+  THE: "Quẹt thẻ",
+};
+
+/** Huy hieu tinh trang (don hoac thanh toan) da escape san. */
+function huyHieu(bang, ma) {
+  const t = bang[ma] || {nhan: "Không rõ", mau: "badge-muted"};
+  return `<span class="badge ${t.mau}">${escapeHtml(t.nhan)}</span>`;
+}
+
+function huyHieuDon(ma) { return huyHieu(TINH_TRANG_DON, ma); }
+function huyHieuThuTien(ma) { return huyHieu(TINH_TRANG_THU_TIEN, ma); }
+function buocTiepDon(ma) { return BUOC_TIEP_DON[ma] || null; }
+function nhanHinhThuc(ma) { return HINH_THUC_THANH_TOAN[ma] || "Khác"; }
+function nhanHoaDon(ma) { return TINH_TRANG_HOA_DON[ma] || "Không rõ"; }
+function canMaGiaoDich(ma) { return ma !== "TIEN_MAT"; }
+
+function nhanTinhTrangDon(ma) { return (TINH_TRANG_DON[ma] || {nhan: "Không rõ"}).nhan; }
+
+/** Don da thu tien (co hoa don), ke ca da hoan. */
+function daCoHoaDon(don) {
+  return don && ["THANH_CONG", "HOAN_MOT_PHAN", "DA_HOAN_TIEN"].includes(don.TrangThaiThanhToan);
+}
+/** Don dang giu tien cua khach (huy thi phai hoan). */
+function donConGiuTien(don) {
+  return don && ["THANH_CONG", "HOAN_MOT_PHAN"].includes(don.TrangThaiThanhToan);
+}
+
+/** Don con mo (chua hoan thanh / chua huy). */
+function donConMo(don) {
+  return don && don.TrangThai !== "HOAN_THANH" && don.TrangThai !== "DA_HUY";
+}
+function donDaHuy(don) { return don && don.TrangThai === "DA_HUY"; }
+function chuaThuTien(don) { return don && don.TrangThaiThanhToan === "CHUA_THANH_TOAN"; }
+function thanhToanDangCho(tt) { return tt && tt.TrangThai === "CHO_XAC_NHAN"; }
+function thanhToanHoanDuoc(tt) {
+  return tt && (tt.TrangThai === "THANH_CONG" || tt.TrangThai === "HOAN_MOT_PHAN");
+}
+
+/** Danh sach lua chon {ma, nhan} de dung cho select / radio. */
+function luaChonTinhTrangDon() {
+  return Object.entries(TINH_TRANG_DON).map(([ma, t]) => ({ma, nhan: t.nhan}));
+}
+function luaChonHinhThuc() {
+  return Object.entries(HINH_THUC_THANH_TOAN).map(([ma, nhan]) => ({ma, nhan}));
+}
+
+/** "2026-10-22T14:05:09" -> "14:05 22/10/2026". */
+function dinhDangThoiGian(value, chiGio) {
+  if (!value) return "—";
+  const d = new Date(value);
+  if (Number.isNaN(d.getTime())) return "—";
+  const gio = d.toLocaleTimeString("vi-VN", {hour: "2-digit", minute: "2-digit"});
+  return chiGio ? gio : `${gio} ${d.toLocaleDateString("vi-VN")}`;
+}
+
+/** Ngay hom nay dang YYYY-MM-DD theo gio may. */
+function ngayHomNay() {
+  const d = new Date();
+  const p = (n) => String(n).padStart(2, "0");
+  return `${d.getFullYear()}-${p(d.getMonth() + 1)}-${p(d.getDate())}`;
+}
+
+/** Bo dau tieng Viet de tim kiem "ca phe" khop "Cà phê". */
+function boDau(text) {
+  return String(text || "").normalize("NFD").replace(/[̀-ͯ]/g, "")
+    .replace(/đ/g, "d").replace(/Đ/g, "D").toLowerCase();
 }
 
 /** Dinh dang gia tien theo kieu Viet Nam. */
