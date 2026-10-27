@@ -51,6 +51,43 @@
 .nav a:hover { background: rgba(255, 255, 255, 0.12); color: #fff; }
 .nav a.active { background: rgba(255, 255, 255, 0.18); color: #fff; }
 
+/* Nhom muc con (Kho hang...): mo bang <details>, dung ban phim duoc, khong can JS */
+.nav-group { position: relative; }
+.nav-group > summary {
+  list-style: none;
+  cursor: pointer;
+  color: #efe3d3;
+  font-size: 14.5px;
+  font-weight: 500;
+  padding: 8px 14px;
+  border-radius: 8px;
+  transition: background 0.15s ease, color 0.15s ease;
+}
+.nav-group > summary::-webkit-details-marker { display: none; }
+.nav-group > summary::after { content: " ▾"; font-size: 12px; }
+.nav-group > summary:hover,
+.nav-group[open] > summary { background: rgba(255, 255, 255, 0.12); color: #fff; }
+.nav-group.active > summary { background: rgba(255, 255, 255, 0.18); color: #fff; }
+.nav-group > summary:focus-visible { outline: 2px solid #fff; outline-offset: 2px; }
+.nav-menu {
+  position: absolute;
+  top: calc(100% + 8px);
+  left: 0;
+  min-width: 230px;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 6px;
+  background: #fff;
+  border: 1px solid #e3d8c8;
+  border-radius: 10px;
+  box-shadow: 0 8px 24px rgba(63, 42, 27, 0.18);
+  z-index: 30;
+}
+.nav .nav-menu a { color: #3f2a1b; padding: 9px 12px; }
+.nav .nav-menu a:hover { background: #f4ede3; color: #3f2a1b; }
+.nav .nav-menu a.active { background: #ece2d2; color: #3f2a1b; font-weight: 600; }
+
 .userbox {
   display: flex;
   align-items: center;

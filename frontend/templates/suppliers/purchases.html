@@ -1,0 +1,168 @@
+{% extends "layout.html" %}
+{% block title %}Nhập hàng - Cà Phê Việt{% endblock %}
+{% block head %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/nhap_hang.css', v=1) }}">
+{% endblock %}
+{% block content %}
+<div class="page-head pos-head">
+  <div>
+    <h2>Nhập hàng</h2>
+    <p class="muted">Lập phiếu khi đặt hàng, xác nhận khi hàng về để tồn kho được cập nhật.</p>
+  </div>
+  {% if 'supplier.manage' in (user.quyens or []) %}
+    <button type="button" id="btn-lap-phieu">+ Lập phiếu nhập</button>
+  {% endif %}
+</div>
+
+<div class="nh-filters">
+  <div class="nh-field nh-field-grow">
+    <label for="loc-ma">Mã phiếu</label>
+    <input id="loc-ma" type="search" placeholder="Tìm theo mã phiếu" autocomplete="off">
+  </div>
+  <div class="nh-field">
+    <label for="loc-tinh-trang">Tình trạng</label>
+    <select id="loc-tinh-trang" class="filter-select">
+      <option value="">Tất cả tình trạng</option>
+    </select>
+  </div>
+  <div class="nh-field">
+    <label for="loc-ncc">Nhà cung cấp</label>
+    <select id="loc-ncc" class="filter-select">
+      <option value="">Tất cả nhà cung cấp</option>
+    </select>
+  </div>
+  <div class="nh-field">
+    <label for="loc-tu-ngay">Từ ngày</label>
+    <input id="loc-tu-ngay" type="date" class="filter-select">
+  </div>
+  <div class="nh-field">
+    <label for="loc-den-ngay">Đến ngày</label>
+    <input id="loc-den-ngay" type="date" class="filter-select">
+  </div>
+</div>
+
+<div id="page-error" class="alert error hidden" role="alert"></div>
+
+<div class="table-wrap">
+  <table class="table nh-bang" id="phieu-table">
+    <thead>
+      <tr>
+        <th>Mã phiếu</th>
+        <th>Nhà cung cấp</th>
+        <th>Ngày nhập</th>
+        <th class="col-num">Tổng tiền</th>
+        <th>Tình trạng</th>
+        <th>Người lập</th>
+        <th class="col-actions">Thao tác</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr class="empty-row"><td colspan="7">Đang tải phiếu nhập hàng...</td></tr>
+    </tbody>
+  </table>
+</div>
+
+<div class="pager" id="pager"></div>
+
+<!-- Chi tiet phieu nhap -->
+<div class="modal hidden" id="modal-phieu-ct" role="dialog" aria-modal="true" aria-labelledby="phieu-ct-title">
+  <div class="modal-card nh-rong">
+    <div class="modal-head">
+      <h3 id="phieu-ct-title">Phiếu nhập hàng</h3>
+      <button type="button" class="modal-close" data-dong-modal="modal-phieu-ct" aria-label="Đóng">×</button>
+    </div>
+    <div class="modal-body" id="phieu-ct-body"></div>
+    <div class="modal-foot wrap" id="phieu-ct-foot"></div>
+  </div>
+</div>
+
+<!-- Lap / sua phieu nhap -->
+<div class="modal hidden" id="modal-phieu" role="dialog" aria-modal="true" aria-labelledby="phieu-title">
+  <div class="modal-card nh-rong">
+    <div class="modal-head">
+      <h3 id="phieu-title">Lập phiếu nhập</h3>
+      <button type="button" class="modal-close" data-dong-modal="modal-phieu" aria-label="Đóng">×</button>
+    </div>
+    <form id="phieu-form" novalidate>
+      <div class="modal-body">
+        <div id="phieu-error" class="alert error hidden" role="alert"></div>
+        <div class="form-row">
+          <label>Nhà cung cấp
+            <select name="ncc" required></select>
+          </label>
+          <label>Ghi chú
+            <input type="text" name="ghi_chu" maxlength="500" autocomplete="off" placeholder="Ví dụ: Giao trước 8 giờ sáng">
+          </label>
+        </div>
+
+        <h4 class="nh-tieu-de-nhom">Nguyên liệu cần nhập</h4>
+        <div class="nh-dong-dau" aria-hidden="true">
+          <span>Nguyên liệu</span><span>Số lượng</span><span>Đơn giá nhập (₫)</span><span>Thành tiền</span><span></span>
+        </div>
+        <div class="nh-danh-sach-dong" id="phieu-dong"></div>
+        <div class="nh-hang-them">
+          <button type="button" class="btn-outline" id="btn-them-dong">+ Thêm nguyên liệu</button>
+          <span class="field-hint" style="margin:0">Mỗi nguyên liệu chỉ chọn một lần trong phiếu.</span>
+        </div>
+
+        <div class="sum-box">
+          <div class="sum-row grand"><span>Tổng tiền tạm tính</span><strong id="phieu-tong">0 ₫</strong></div>
+        </div>
+        <p class="field-hint">Số tiền chính thức do hệ thống tính lại khi lưu phiếu.</p>
+      </div>
+      <div class="modal-foot">
+        <button type="button" class="btn-outline" data-dong-modal="modal-phieu">Huỷ</button>
+        <button type="submit" id="btn-luu-phieu">Lưu phiếu nhập</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- Xac nhan da nhan hang -->
+<div class="modal hidden" id="modal-nhan" role="dialog" aria-modal="true" aria-labelledby="nhan-title">
+  <div class="modal-card">
+    <div class="modal-head">
+      <h3 id="nhan-title">Xác nhận đã nhận hàng</h3>
+      <button type="button" class="modal-close" data-dong-modal="modal-nhan" aria-label="Đóng">×</button>
+    </div>
+    <div class="modal-body">
+      <div id="nhan-error" class="alert error hidden" role="alert"></div>
+      <p id="nhan-gioi-thieu" style="margin-top:0"></p>
+      <div class="sum-box" id="nhan-ds"></div>
+      <div class="note-box">Sau khi xác nhận, tồn kho sẽ tăng theo đúng số lượng trên và phiếu không sửa được nữa.</div>
+    </div>
+    <div class="modal-foot">
+      <button type="button" class="btn-outline" id="btn-chua-nhan" data-dong-modal="modal-nhan">Chưa nhận</button>
+      <button type="button" id="btn-nhan">Xác nhận đã nhận hàng</button>
+    </div>
+  </div>
+</div>
+
+<!-- Huy phieu -->
+<div class="modal hidden" id="modal-huy" role="dialog" aria-modal="true" aria-labelledby="huy-title">
+  <div class="modal-card">
+    <div class="modal-head">
+      <h3 id="huy-title">Huỷ phiếu nhập</h3>
+      <button type="button" class="modal-close" data-dong-modal="modal-huy" aria-label="Đóng">×</button>
+    </div>
+    <form id="huy-form" novalidate>
+      <div class="modal-body">
+        <div id="huy-error" class="alert error hidden" role="alert"></div>
+        <p id="huy-gioi-thieu" style="margin-top:0"></p>
+        <div id="huy-canh-bao" class="note-box danger hidden"></div>
+        <label>Lý do huỷ
+          <textarea name="ly_do" rows="3" maxlength="500" required placeholder="Ví dụ: Nhập nhầm nhà cung cấp"></textarea>
+        </label>
+      </div>
+      <div class="modal-foot">
+        <button type="button" class="btn-outline" data-dong-modal="modal-huy">Không huỷ</button>
+        <button type="submit" class="btn-danger" id="btn-huy">Huỷ phiếu nhập</button>
+      </div>
+    </form>
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="{{ url_for('static', filename='js/nhap_hang.js', v=1) }}"></script>
+{% endblock %}

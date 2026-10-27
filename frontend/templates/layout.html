@@ -7,6 +7,7 @@
   <link rel="stylesheet" href="{{ url_for('static', filename='css/layout.css') }}">
   <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css', v=4) }}">
   <link rel="stylesheet" href="{{ url_for('static', filename='css/forms.css') }}">
+  {% block head %}{% endblock %}
 </head>
 <body>
   <header class="topbar">
@@ -26,6 +27,22 @@
         <a href="/accounts"{% if active == 'accounts' %} class="active"{% endif %}>Nhân sự</a>
       {% endif %}
       <a href="/menu"{% if active == 'menu' %} class="active"{% endif %}>Thực đơn</a>
+      {% set q = (user.quyens if user else []) or [] %}
+      {% if 'inventory.view' in q or 'supplier.view' in q %}
+        <details class="nav-group{% if active in ['inventory', 'recipes', 'suppliers', 'purchases'] %} active{% endif %}">
+          <summary>Kho hàng</summary>
+          <div class="nav-menu">
+            {% if 'inventory.view' in q %}
+              <a href="/inventory"{% if active == 'inventory' %} class="active"{% endif %}>Nguyên liệu và tồn kho</a>
+              <a href="/recipes"{% if active == 'recipes' %} class="active"{% endif %}>Công thức pha chế</a>
+            {% endif %}
+            {% if 'supplier.view' in q %}
+              <a href="/purchases"{% if active == 'purchases' %} class="active"{% endif %}>Nhập hàng</a>
+              <a href="/suppliers"{% if active == 'suppliers' %} class="active"{% endif %}>Nhà cung cấp</a>
+            {% endif %}
+          </div>
+        </details>
+      {% endif %}
       {% if user and 'role.manage' in (user.quyens or []) %}
         <a href="/roles"{% if active == 'roles' %} class="active"{% endif %}>Phân quyền</a>
       {% endif %}

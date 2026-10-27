@@ -18,6 +18,11 @@ const NHAN_QUYEN = {
   "order.cancel": "Huỷ đơn hàng",
   "payment.manage": "Thu tiền và in hoá đơn",
   "payment.refund": "Hoàn tiền cho khách",
+  "inventory.view": "Xem nguyên liệu, tồn kho và công thức pha chế",
+  "inventory.manage": "Quản lý nguyên liệu, kiểm kê kho và công thức",
+  "supplier.view": "Xem nhà cung cấp và phiếu nhập hàng",
+  "supplier.manage": "Quản lý nhà cung cấp, lập và sửa phiếu nhập",
+  "purchase.confirm": "Xác nhận đã nhận hàng (cập nhật kho)",
 };
 
 function nhanQuyen(ten) {
@@ -26,6 +31,7 @@ function nhanQuyen(ten) {
 
 /** Thong bao tu he thong -> cau tieng Viet than thien. */
 const DIEN_GIAI_LOI = [
+  ["co so du lieu chua san sang", "Hệ thống chưa sẵn sàng. Vui lòng liên hệ quản lý hoặc thử lại sau."],
   ["email da duoc su dung", "Email này đã có người dùng. Vui lòng chọn email khác."],
   ["email hoac mat khau", "Email hoặc mật khẩu chưa đúng."],
   ["mat khau phai tu", "Mật khẩu cần ít nhất 6 ký tự."],
@@ -86,15 +92,63 @@ const DIEN_GIAI_LOI = [
   ["so tien khong hop le", "Số tiền chưa hợp lệ."],
   ["hoa don khong ton tai", "Không tìm thấy hoá đơn."],
   ["chua co hoa don", "Đơn chưa thanh toán nên chưa có hoá đơn."],
+  // Kho nguyen lieu & cong thuc
+  ["ten nguyen lieu la bat buoc", "Vui lòng nhập tên nguyên liệu."],
+  ["ten nguyen lieu da ton tai", "Đã có nguyên liệu trùng tên."],
+  ["don vi tinh la bat buoc", "Vui lòng nhập đơn vị tính."],
+  ["khong the doi don vi tinh", "Nguyên liệu đã có lịch sử kho hoặc nằm trong công thức nên không đổi được đơn vị tính."],
+  ["muc ton toi thieu khong hop le", "Mức tồn tối thiểu chưa hợp lệ."],
+  ["so luong ton ban dau khong hop le", "Số lượng tồn ban đầu chưa hợp lệ."],
+  ["so luong thuc te khong hop le", "Số lượng thực tế chưa hợp lệ."],
+  ["ton kho khong thay doi", "Số lượng thực tế bằng tồn hiện tại, không cần điều chỉnh."],
+  ["so luong xuat phai lon hon 0", "Số lượng xuất phải lớn hơn 0."],
+  ["so luong can phai lon hon 0", "Định lượng phải lớn hơn 0."],
+  ["cong thuc toi da", "Công thức có quá nhiều nguyên liệu."],
+  ["nguyen lieu bi trung", "Một nguyên liệu đang bị chọn hai lần."],
+  ["danh sach nguyen lieu khong hop le", "Danh sách nguyên liệu chưa hợp lệ."],
+  ["nguyen lieu khong ton tai", "Không tìm thấy nguyên liệu này. Vui lòng tải lại trang."],
+  ["nguyen lieu khong hop le", "Vui lòng chọn nguyên liệu."],
+  ["da ngung su dung", "Có nguyên liệu đã ngừng sử dụng. Vui lòng kiểm tra lại."],
+  ["da ngung dung", "Có nguyên liệu đã ngừng sử dụng. Vui lòng kiểm tra lại."],
+  ["ly do la bat buoc", "Vui lòng nhập lý do."],
+  ["don hang da huy, khong the tru kho", "Đơn đã huỷ nên không trừ kho."],
+  ["chua o buoc pha che", "Đơn chưa bắt đầu pha chế nên chưa trừ kho."],
+  ["don nay da duoc tru kho", "Đơn này đã được trừ kho nguyên liệu rồi."],
+  ["khong co mon nao co cong thuc", "Các món trong đơn chưa có công thức pha chế nên không trừ kho."],
+  ["he thong dang ban", "Hệ thống đang bận. Vui lòng thử lại."],
+  // Nha cung cap & nhap hang
+  ["ten nha cung cap la bat buoc", "Vui lòng nhập tên nhà cung cấp."],
+  ["nha cung cap da ton tai", "Đã có nhà cung cấp trùng tên."],
+  ["nha cung cap khong ton tai", "Không tìm thấy nhà cung cấp."],
+  ["nha cung cap khong hop le", "Vui lòng chọn nhà cung cấp."],
+  ["nha cung cap da ngung hop tac", "Nhà cung cấp này đã ngừng hợp tác."],
+  ["so dien thoai khong hop le", "Số điện thoại chưa hợp lệ."],
+  ["email khong hop le", "Email chưa hợp lệ."],
+  ["phieu nhap phai co it nhat 1 dong", "Phiếu nhập cần có ít nhất 1 nguyên liệu."],
+  ["phieu nhap toi da", "Phiếu nhập có quá nhiều dòng."],
+  ["so luong phai lon hon 0 va khong qua", "Số lượng nhập phải lớn hơn 0."],
+  ["don gia nhap phai tu", "Đơn giá nhập chưa hợp lệ."],
+  ["tong tien phieu nhap qua lon", "Tổng tiền phiếu nhập quá lớn."],
+  ["phieu nhap khong ton tai", "Không tìm thấy phiếu nhập."],
+  ["phieu nhap khong co dong nao", "Phiếu nhập chưa có nguyên liệu nào."],
+  ["phieu da xac nhan hoac da huy", "Phiếu đã nhận hàng hoặc đã huỷ nên không sửa được."],
+  ["phieu da duoc xac nhan truoc do", "Phiếu này đã được nhận hàng trước đó."],
+  ["phieu da huy, khong the xac nhan", "Phiếu đã huỷ nên không nhận hàng được."],
+  ["phieu da huy truoc do", "Phiếu này đã được huỷ trước đó."],
+  ["khong co quyen huy phieu da xac nhan", "Bạn không có quyền huỷ phiếu đã nhận hàng. Vui lòng nhờ quản lý."],
+  ["du lieu gui len khong hop le", "Thông tin gửi lên chưa hợp lệ. Vui lòng tải lại trang."],
   ["khong co gi de cap nhat", "Bạn chưa thay đổi thông tin nào."],
   ["khong co quyen", "Bạn không có quyền thực hiện việc này."],
   ["chua dang nhap", "Phiên làm việc đã kết thúc. Vui lòng đăng nhập lại."],
 ];
 
+/** Trang rieng co the them cau dien giai vao day; duoc xet truoc bang chung o tren. */
+const DIEN_GIAI_LOI_RIENG = [];
+
 /** Doi thong bao he thong sang cau than thien; khong in nguyen van. */
 function dienGiaiLoi(raw, status) {
   const text = (raw || "").toLowerCase();
-  for (const [dauHieu, cau] of DIEN_GIAI_LOI) {
+  for (const [dauHieu, cau] of DIEN_GIAI_LOI_RIENG.concat(DIEN_GIAI_LOI)) {
     if (text.includes(dauHieu)) return cau;
   }
   if (status === 403) return "Bạn không có quyền thực hiện việc này.";
@@ -120,6 +174,7 @@ function thongBaoDangNhap(status, raw) {
   }
   if (status === 400) return "Vui lòng nhập đầy đủ email và mật khẩu.";
   if (status === 401) return "Email hoặc mật khẩu chưa đúng.";
+  if (status >= 500) return "Hệ thống chưa sẵn sàng. Vui lòng liên hệ quản lý hoặc thử lại sau.";
   return "Chưa đăng nhập được. Vui lòng thử lại.";
 }
 
@@ -205,6 +260,53 @@ function nhanHoaDon(ma) { return TINH_TRANG_HOA_DON[ma] || "Không rõ"; }
 function canMaGiaoDich(ma) { return ma !== "TIEN_MAT"; }
 
 function nhanTinhTrangDon(ma) { return (TINH_TRANG_DON[ma] || {nhan: "Không rõ"}).nhan; }
+
+/* Kho hang & nhap hang: ma he thong -> nhan. Template va file JS cua trang KHONG viet ma truc tiep. */
+const TINH_TRANG_KHO = {
+  DU: {nhan: "Đủ dùng", mau: "badge-on"},
+  SAP_HET: {nhan: "Sắp hết", mau: "badge-wait"},
+  HET: {nhan: "Hết hàng", mau: "badge-off"},
+};
+
+const TINH_TRANG_PHIEU_NHAP = {
+  NHAP: {nhan: "Chờ nhận hàng", mau: "badge-wait"},
+  DA_NHAN: {nhan: "Đã nhận hàng", mau: "badge-on"},
+  DA_HUY: {nhan: "Đã huỷ", mau: "badge-off"},
+};
+
+const LOAI_GIAO_DICH_KHO = {
+  NHAP_HANG: "Nhập hàng",
+  HUY_NHAP: "Huỷ phiếu nhập",
+  XUAT_KHO: "Xuất kho",
+  TIEU_HAO: "Dùng để pha chế",
+  DIEU_CHINH: "Kiểm kê, điều chỉnh",
+};
+
+function huyHieuKho(ma) { return huyHieu(TINH_TRANG_KHO, ma); }
+function huyHieuPhieuNhap(ma) { return huyHieu(TINH_TRANG_PHIEU_NHAP, ma); }
+function nhanLoaiGiaoDichKho(ma) { return LOAI_GIAO_DICH_KHO[ma] || "Khác"; }
+function luaChonTinhTrangKho() {
+  return Object.entries(TINH_TRANG_KHO).map(([ma, t]) => ({ma, nhan: t.nhan}));
+}
+function luaChonTinhTrangPhieuNhap() {
+  return Object.entries(TINH_TRANG_PHIEU_NHAP).map(([ma, t]) => ({ma, nhan: t.nhan}));
+}
+function luaChonLoaiGiaoDichKho() {
+  return Object.entries(LOAI_GIAO_DICH_KHO).map(([ma, nhan]) => ({ma, nhan}));
+}
+function phieuNhapChoNhan(p) { return !!p && p.TrangThai === "NHAP"; }
+function phieuNhapDaNhan(p) { return !!p && p.TrangThai === "DA_NHAN"; }
+function phieuNhapDaHuy(p) { return !!p && p.TrangThai === "DA_HUY"; }
+/** Giao dich kho lam tang (>0) hay giam (<0) ton. */
+function khoTang(gd) { return !!gd && Number(gd.SoLuongThayDoi) > 0; }
+
+/** So luong nguyen lieu: toi da 3 so le, bo so 0 thua. 1250.5 -> "1.250,5". */
+function dinhDangSoLuong(value, donVi) {
+  const n = Number(value);
+  if (!Number.isFinite(n)) return "—";
+  const s = n.toLocaleString("vi-VN", {maximumFractionDigits: 3});
+  return donVi ? `${s} ${donVi}` : s;
+}
 
 /** Don da thu tien (co hoa don), ke ca da hoan. */
 function daCoHoaDon(don) {

@@ -22,6 +22,11 @@
     <span class="stat-value" data-value>–</span>
     <span class="stat-foot">trên tổng <span data-total>–</span> người</span>
   </div>
+  <div class="stat-tile hidden" id="tile-kho">
+    <span class="stat-label">Kho hàng</span>
+    <span class="stat-value" data-value>–</span>
+    <span class="stat-foot">nguyên liệu sắp hết, trong đó <span data-total>–</span> đã hết</span>
+  </div>
 </div>
 
 <h3 class="section-title">Lối tắt</h3>
@@ -48,6 +53,22 @@
     <p>Quản lý nhóm món, giá bán và tình trạng kinh doanh của từng món.</p>
     <a class="btn btn-self" href="/menu">Mở thực đơn</a>
   </div>
+  {% if user and 'inventory.view' in (user.quyens or []) %}
+  <div class="card">
+    <span class="card-icon">📦</span>
+    <h3>Kho hàng</h3>
+    <p>Theo dõi tồn kho nguyên liệu, nguyên liệu sắp hết và công thức pha chế.</p>
+    <a class="btn btn-self" href="/inventory">Mở kho hàng</a>
+  </div>
+  {% endif %}
+  {% if user and 'supplier.view' in (user.quyens or []) %}
+  <div class="card">
+    <span class="card-icon">🚚</span>
+    <h3>Nhập hàng</h3>
+    <p>Lập phiếu nhập, xác nhận khi hàng về và quản lý nhà cung cấp.</p>
+    <a class="btn btn-self" href="/purchases">Mở nhập hàng</a>
+  </div>
+  {% endif %}
   {% if user and 'account.view' in (user.quyens or []) %}
   <div class="card">
     <span class="card-icon">👥</span>
@@ -106,6 +127,13 @@
     if (staff) {
       setTile("tile-staff", staff.filter(dangLamViec).length, staff.length);
     }
+
+    {% if user and 'inventory.view' in (user.quyens or []) %}
+    const sapHet = await load("/api/v1/inventory/low-stock");
+    if (sapHet) {
+      setTile("tile-kho", sapHet.length, sapHet.filter((n) => Number(n.SoLuongTon) <= 0).length);
+    }
+    {% endif %}
   })();
 </script>
 {% endblock %}

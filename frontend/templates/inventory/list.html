@@ -1,0 +1,275 @@
+{% extends "layout.html" %}
+{% block title %}Nguyên liệu và tồn kho - Cà Phê Việt{% endblock %}
+{% block head %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/kho.css', v=1) }}">
+{% endblock %}
+{% block content %}
+{% set q = user.quyens or [] %}
+{% set co_quan_ly = 'inventory.manage' in q %}
+{% set co_tru_kho = 'order.manage' in q %}
+
+<div id="trang-ton-kho" class="kho-page">
+  <div class="page-head pos-head">
+    <div>
+      <h2>Nguyên liệu và tồn kho</h2>
+      <p class="muted">Theo dõi số lượng nguyên liệu còn trong kho, kiểm kê và xuất kho khi cần.</p>
+    </div>
+    <div class="kho-head-nut">
+      {% if co_tru_kho %}
+        <button type="button" id="btn-tru-kho" class="btn-outline">Trừ kho theo đơn</button>
+      {% endif %}
+      {% if co_quan_ly %}
+        <button type="button" id="btn-them-nl">+ Thêm nguyên liệu</button>
+      {% endif %}
+    </div>
+  </div>
+
+  <div class="stat-row">
+    <div class="stat-tile">
+      <span class="stat-label">Nguyên liệu đang dùng</span>
+      <span class="stat-value" id="tk-tong">—</span>
+    </div>
+    <div class="stat-tile">
+      <span class="stat-label">Sắp hết</span>
+      <span class="stat-value kho-sap" id="tk-sap">—</span>
+      <span class="stat-foot">Còn ít hơn mức tối thiểu</span>
+    </div>
+    <div class="stat-tile">
+      <span class="stat-label">Đã hết hàng</span>
+      <span class="stat-value kho-het" id="tk-het">—</span>
+      <span class="stat-foot">Cần nhập thêm ngay</span>
+    </div>
+  </div>
+
+  <div id="kho-canh-bao" class="alert kho-canh-bao hidden" role="status"></div>
+
+  <div class="tabs" role="tablist" aria-label="Chọn nội dung kho">
+    <button type="button" class="tab active" data-tab="ton-kho" role="tab" aria-selected="true">Tồn kho</button>
+    <button type="button" class="tab" data-tab="lich-su" role="tab" aria-selected="false">Lịch sử kho</button>
+  </div>
+
+  <!-- ===== Tab Ton kho ===== -->
+  <section id="tab-ton-kho">
+    <div class="toolbar">
+      <div class="search-box">
+        <span class="search-icon" aria-hidden="true">🔍</span>
+        <input id="tk-tim" type="search" placeholder="Tìm nguyên liệu..." aria-label="Tìm nguyên liệu" maxlength="150">
+      </div>
+      <select id="tk-loc" class="filter-select" aria-label="Lọc theo tình trạng kho">
+        <option value="">Tất cả tình trạng</option>
+      </select>
+      <label class="kho-check">
+        <input type="checkbox" id="tk-ca-ngung"> Hiện cả nguyên liệu đã ngừng dùng
+      </label>
+    </div>
+
+    <div id="tk-loi-trang" class="alert error hidden" role="alert"></div>
+
+    <div class="table-wrap kho-cuon">
+      <table class="table kho-table" id="bang-ton">
+        <thead>
+          <tr>
+            <th>Nguyên liệu</th>
+            <th class="col-num">Tồn hiện tại</th>
+            <th class="col-num">Mức tối thiểu</th>
+            <th>Tình trạng</th>
+            <th class="col-actions">Thao tác</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr class="empty-row"><td colspan="5">Đang tải tồn kho...</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <div class="pager" id="tk-trang"></div>
+  </section>
+
+  <!-- ===== Tab Lich su kho ===== -->
+  <section id="tab-lich-su" class="hidden">
+    <div class="toolbar">
+      <select id="ls-nl" class="filter-select" aria-label="Lọc theo nguyên liệu">
+        <option value="">Tất cả nguyên liệu</option>
+      </select>
+      <select id="ls-loai" class="filter-select" aria-label="Lọc theo loại thay đổi">
+        <option value="">Tất cả loại thay đổi</option>
+      </select>
+      <label class="kho-loc-ngay">Từ ngày
+        <input type="date" id="ls-tu" class="filter-select" style="margin-top:0">
+      </label>
+      <label class="kho-loc-ngay">Đến ngày
+        <input type="date" id="ls-den" class="filter-select" style="margin-top:0">
+      </label>
+      <button type="button" id="ls-xoa-loc" class="btn-outline">Bỏ lọc</button>
+    </div>
+
+    <div id="ls-loi-trang" class="alert error hidden" role="alert"></div>
+
+    <div class="table-wrap kho-cuon">
+      <table class="table kho-table" id="bang-ls">
+        <thead>
+          <tr>
+            <th>Thời gian</th>
+            <th>Nguyên liệu</th>
+            <th>Loại</th>
+            <th class="col-num">Thay đổi</th>
+            <th class="col-num">Trước → sau</th>
+            <th>Người làm / lý do</th>
+            <th>Đơn / phiếu</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr class="empty-row"><td colspan="7">Đang tải lịch sử kho...</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <div class="pager" id="ls-trang"></div>
+  </section>
+</div>
+
+<!-- Chi tiet nguyen lieu -->
+<div class="modal hidden" id="modal-chi-tiet" role="dialog" aria-modal="true" aria-labelledby="ct-tieu-de">
+  <div class="modal-card modal-wide kho-modal-rong">
+    <div class="modal-head">
+      <h3 id="ct-tieu-de">Nguyên liệu</h3>
+      <button type="button" class="modal-close" data-dong-modal="modal-chi-tiet" aria-label="Đóng">×</button>
+    </div>
+    <div class="modal-body" id="ct-noi-dung"></div>
+    <div class="modal-foot wrap">
+      <span id="ct-chan-nut" class="kho-head-nut"></span>
+      <span class="spacer"></span>
+      <button type="button" class="btn-outline" data-dong-modal="modal-chi-tiet">Đóng</button>
+    </div>
+  </div>
+</div>
+
+{% if co_quan_ly %}
+<!-- Them / sua nguyen lieu -->
+<div class="modal hidden" id="modal-nl" role="dialog" aria-modal="true" aria-labelledby="nl-tieu-de">
+  <div class="modal-card">
+    <div class="modal-head">
+      <h3 id="nl-tieu-de">Thêm nguyên liệu</h3>
+      <button type="button" class="modal-close" data-dong-modal="modal-nl" aria-label="Đóng">×</button>
+    </div>
+    <form id="nl-form" novalidate>
+      <div class="modal-body">
+        <div id="nl-loi" class="alert error hidden" role="alert"></div>
+        <label>Tên nguyên liệu
+          <input type="text" name="ten" required maxlength="150" autocomplete="off" placeholder="Ví dụ: Cà phê hạt">
+        </label>
+        <div class="form-row">
+          <label>Đơn vị tính
+            <input type="text" name="don_vi" required maxlength="30" autocomplete="off" placeholder="g, ml, cái...">
+          </label>
+          <label>Mức tồn tối thiểu
+            <input type="text" name="muc" inputmode="decimal" autocomplete="off" placeholder="0">
+          </label>
+        </div>
+        <label id="nl-ton-wrap">Số lượng tồn ban đầu
+          <input type="text" name="ton" inputmode="decimal" autocomplete="off" placeholder="0">
+          <span class="field-hint">Để trống nếu chưa có hàng trong kho. Số này được ghi vào lịch sử kho.</span>
+        </label>
+        <p id="nl-ghi-chu-sua" class="muted small hidden" style="margin:0">
+          Muốn đổi số lượng tồn, hãy dùng Kiểm kê hoặc Xuất kho để có lý do ghi lại.
+        </p>
+      </div>
+      <div class="modal-foot">
+        <button type="button" class="btn-outline" data-dong-modal="modal-nl">Huỷ</button>
+        <button type="submit" id="btn-luu-nl">Lưu</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- Kiem ke -->
+<div class="modal hidden" id="modal-kiem-ke" role="dialog" aria-modal="true" aria-labelledby="kk-tieu-de">
+  <div class="modal-card">
+    <div class="modal-head">
+      <h3 id="kk-tieu-de">Kiểm kê nguyên liệu</h3>
+      <button type="button" class="modal-close" data-dong-modal="modal-kiem-ke" aria-label="Đóng">×</button>
+    </div>
+    <form id="kk-form" novalidate>
+      <div class="modal-body">
+        <div id="kk-loi" class="alert error hidden" role="alert"></div>
+        <div class="kho-tom-tat" id="kk-thong-tin"></div>
+        <label>Số lượng đếm được thực tế (<span id="kk-don-vi"></span>)
+          <input type="text" name="so_dem" required inputmode="decimal" autocomplete="off" placeholder="0">
+        </label>
+        <p class="small" id="kk-chenh" aria-live="polite" style="margin:-6px 0 14px"></p>
+        <p class="muted small" style="margin:0 0 8px">Chọn nhanh lý do hoặc tự nhập:</p>
+        <div class="reason-chips" id="kk-goi-y"></div>
+        <label>Lý do kiểm kê
+          <textarea name="ly_do" rows="2" maxlength="500" required placeholder="Ví dụ: Kiểm kê cuối tuần"></textarea>
+        </label>
+      </div>
+      <div class="modal-foot">
+        <button type="button" class="btn-outline" data-dong-modal="modal-kiem-ke">Huỷ</button>
+        <button type="submit" id="btn-luu-kk">Ghi kiểm kê</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- Xuat kho -->
+<div class="modal hidden" id="modal-xuat-kho" role="dialog" aria-modal="true" aria-labelledby="xk-tieu-de">
+  <div class="modal-card">
+    <div class="modal-head">
+      <h3 id="xk-tieu-de">Xuất kho</h3>
+      <button type="button" class="modal-close" data-dong-modal="modal-xuat-kho" aria-label="Đóng">×</button>
+    </div>
+    <form id="xk-form" novalidate>
+      <div class="modal-body">
+        <div id="xk-loi" class="alert error hidden" role="alert"></div>
+        <div class="kho-tom-tat" id="xk-thong-tin"></div>
+        <label>Số lượng xuất (<span id="xk-don-vi"></span>)
+          <input type="text" name="so_luong" required inputmode="decimal" autocomplete="off" placeholder="0">
+        </label>
+        <p class="muted small" style="margin:0 0 8px">Chọn nhanh lý do hoặc tự nhập:</p>
+        <div class="reason-chips" id="xk-goi-y"></div>
+        <label>Lý do xuất kho
+          <textarea name="ly_do" rows="2" maxlength="500" required placeholder="Ví dụ: Sữa hết hạn, đổ bỏ"></textarea>
+        </label>
+      </div>
+      <div class="modal-foot">
+        <button type="button" class="btn-outline" data-dong-modal="modal-xuat-kho">Huỷ</button>
+        <button type="submit" id="btn-luu-xk">Xuất kho</button>
+      </div>
+    </form>
+  </div>
+</div>
+{% endif %}
+
+{% if co_tru_kho %}
+<!-- Tru kho theo don -->
+<div class="modal hidden" id="modal-tru-kho" role="dialog" aria-modal="true" aria-labelledby="tru-tieu-de">
+  <div class="modal-card modal-wide">
+    <div class="modal-head">
+      <h3 id="tru-tieu-de">Trừ kho theo đơn</h3>
+      <button type="button" class="modal-close" data-dong-modal="modal-tru-kho" aria-label="Đóng">×</button>
+    </div>
+    <form id="tk-form" novalidate>
+      <div class="modal-body">
+        <div id="tk-loi" class="alert error hidden" role="alert"></div>
+        <div id="tk-chon">
+          <p class="muted small" style="margin:0 0 10px">
+            Chọn đơn đang pha chế hoặc đã hoàn thành để trừ nguyên liệu theo công thức. Mỗi đơn chỉ trừ một lần.
+          </p>
+          <label>Tìm theo mã đơn
+            <input type="search" name="q" autocomplete="off" maxlength="50" placeholder="Nhập một phần mã đơn">
+          </label>
+          <div class="kho-don-ds" id="tk-ds-don" aria-live="polite"></div>
+        </div>
+        <div id="tk-ket-qua" class="kho-ket-qua hidden" aria-live="polite"></div>
+      </div>
+      <div class="modal-foot">
+        <button type="button" class="btn-outline" id="tk-dong" data-dong-modal="modal-tru-kho">Huỷ</button>
+        <button type="submit" id="btn-tru-kho-xn" disabled>Trừ kho cho đơn này</button>
+      </div>
+    </form>
+  </div>
+</div>
+{% endif %}
+{% endblock %}
+
+{% block scripts %}
+<script src="{{ url_for('static', filename='js/kho.js', v=1) }}"></script>
+{% endblock %}

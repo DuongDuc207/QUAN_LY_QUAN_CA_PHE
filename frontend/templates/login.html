@@ -16,10 +16,10 @@
     <div id="login-error" class="alert error hidden"></div>
     <form id="login-form">
       <label>Email
-        <input type="email" name="email" placeholder="ban@caphe.vn" required autofocus>
+        <input type="email" name="email" placeholder="ban@caphe.vn" autocomplete="username" required autofocus>
       </label>
       <label>Mật khẩu
-        <input type="password" name="password" placeholder="Nhập mật khẩu" required>
+        <input type="password" name="password" placeholder="Nhập mật khẩu" autocomplete="current-password" required>
       </label>
       <button type="submit">Đăng nhập</button>
     </form>
@@ -30,19 +30,28 @@
       e.preventDefault();
       const form = new FormData(e.target);
       const err = document.getElementById("login-error");
+      const button = e.target.querySelector('button[type="submit"]');
       err.classList.add("hidden");
-      const res = await fetch("/api/v1/auth/login", {
-        method: "POST",
-        headers: {"Content-Type": "application/json"},
-        body: JSON.stringify({email: form.get("email"), password: form.get("password")}),
-      });
-      const data = await res.json();
-      if (!res.ok || !data.success) {
-        err.textContent = thongBaoDangNhap(res.status, data.message);
+      button.disabled = true;
+      try {
+        const res = await fetch("/api/v1/auth/login", {
+          method: "POST",
+          headers: {"Content-Type": "application/json"},
+          body: JSON.stringify({email: form.get("email").trim(), password: form.get("password")}),
+        });
+        const data = await res.json().catch(() => ({}));
+        if (!res.ok || !data.success) {
+          err.textContent = thongBaoDangNhap(res.status, data.message);
+          err.classList.remove("hidden");
+          return;
+        }
+        window.location.href = "/dashboard";
+      } catch (error) {
+        err.textContent = LOI_KET_NOI;
         err.classList.remove("hidden");
-        return;
+      } finally {
+        button.disabled = false;
       }
-      window.location.href = "/dashboard";
     });
   </script>
 </body>
