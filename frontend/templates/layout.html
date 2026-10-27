@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>{% block title %}Cà Phê Việt{% endblock %}</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/layout.css') }}">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css', v=3) }}">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/forms.css') }}">
+</head>
+<body>
+  <header class="topbar">
+    <div class="brand">
+      <span class="brand-mark">☕</span>
+      Cà Phê Việt
+    </div>
+    <nav class="nav">
+      <a href="/dashboard"{% if active == 'dashboard' %} class="active"{% endif %}>Trang chủ</a>
+      {% if user and 'account.view' in (user.quyens or []) %}
+        <a href="/accounts"{% if active == 'accounts' %} class="active"{% endif %}>Nhân sự</a>
+      {% endif %}
+      <a href="/menu"{% if active == 'menu' %} class="active"{% endif %}>Thực đơn</a>
+      {% if user and 'role.manage' in (user.quyens or []) %}
+        <a href="/roles"{% if active == 'roles' %} class="active"{% endif %}>Phân quyền</a>
+      {% endif %}
+    </nav>
+    <div class="userbox">
+      {% if user and user.ho_ten %}
+        <div class="user-meta">
+          <span class="user-name">{{ user.ho_ten }}</span>
+          <span class="user-role">{{ user.ten_vai_tro }}</span>
+        </div>
+        <button id="btn-logout" type="button" class="btn-ghost">Đăng xuất</button>
+      {% else %}
+        <a href="/login">Đăng nhập</a>
+      {% endif %}
+    </div>
+  </header>
+  <main class="container">
+    {% block content %}{% endblock %}
+  </main>
+  <script src="{{ url_for('static', filename='js/main.js', v=3) }}"></script>
+  {% block scripts %}{% endblock %}
+</body>
+</html>
