@@ -36,7 +36,6 @@ def need_perm(ten_quyen):
 
 
 def _save_session(user):
-    session.clear()
     session["tai_khoan_id"] = user["TaiKhoanID"]
     session["ho_ten"] = user["HoTen"]
     session["email"] = user["Email"]
@@ -47,14 +46,9 @@ def _save_session(user):
 # 1. POST /auth/login - Dang nhap
 @auth_bp.post("/auth/login")
 def login():
-    data = request.get_json(silent=True)
-    if not isinstance(data, dict):
-        return fail("Email va mat khau la bat buoc", 400)
-    email = data.get("email")
-    password = data.get("password")
-    if not isinstance(email, str) or not isinstance(password, str):
-        return fail("Email va mat khau la bat buoc", 400)
-    email = email.strip().lower()
+    data = request.get_json(silent=True) or {}
+    email = (data.get("email") or "").strip()
+    password = data.get("password") or ""
     if not email or not password:
         return fail("Email va mat khau la bat buoc", 400)
     user, err = service.dang_nhap(email, password)

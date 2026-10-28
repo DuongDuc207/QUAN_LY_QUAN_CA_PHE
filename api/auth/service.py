@@ -36,13 +36,12 @@ def _require_perm(session, ten_quyen):
 
 # ---------- Auth ----------
 def dang_nhap(email, password):
-    email = email.strip().lower()
     with get_connection() as conn:
         cur = conn.cursor()
         cur.execute(
             "SELECT t.*, v.TenVaiTro FROM dbo.TaiKhoan t "
             "JOIN dbo.VaiTro v ON v.VaiTroID = t.VaiTroID "
-            "WHERE LOWER(t.Email) = ?",
+            "WHERE t.Email = ?",
             (email,),
         )
         row = fetch_one(cur)
@@ -50,11 +49,7 @@ def dang_nhap(email, password):
             return None, "Email hoac mat khau khong dung"
         if row["TrangThai"] != "HOAT_DONG":
             return None, "Tai khoan da bi khoa"
-        try:
-            password_ok = check_password_hash(row["MatKhauHash"] or "", password)
-        except (ValueError, TypeError):
-            password_ok = False
-        if not password_ok:
+        if not check_password_hash(row["MatKhauHash"], password):
             return None, "Email hoac mat khau khong dung"
         quyens = _quyen_cua_vai_tro(cur, row["VaiTroID"])
         return _tai_khoan_dict(row, quyens), None
@@ -70,7 +65,7 @@ def lay_thong_tin_hien_tai(tai_khoan_id):
             (tai_khoan_id,),
         )
         row = fetch_one(cur)
-        if not row or row["TrangThai"] != "HOAT_DONG":
+        if not row:
             return None
         return _tai_khoan_dict(row, _quyen_cua_vai_tro(cur, row["VaiTroID"]))
 
@@ -114,7 +109,6 @@ def chi_tiet_tai_khoan(tai_khoan_id):
 
 
 def tao_tai_khoan(ho_ten, email, password, vai_tro_id, so_dien_thoai=None):
-    email = email.strip().lower()
     if not ho_ten or not email or not password:
         return None, "Ho ten, email va mat khau la bat buoc"
     if len(password) < 6:
