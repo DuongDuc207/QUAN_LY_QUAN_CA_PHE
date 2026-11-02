@@ -8,6 +8,10 @@
 --   ThanhToan.TrangThai: CHO_XAC_NHAN -> THANH_CONG | THAT_BAI ; THANH_CONG -> HOAN_MOT_PHAN | DA_HOAN_TIEN
 -- =====================================================
 
+-- Bang Sprint 3 (LichSuKho) tro toi DonHang -> phai xoa truoc
+IF OBJECT_ID('dbo.LichSuKho', 'U') IS NOT NULL DROP TABLE dbo.LichSuKho;
+GO
+
 -- Xoa theo thu tu FK nguoc
 IF OBJECT_ID('dbo.HoanTien', 'U') IS NOT NULL DROP TABLE dbo.HoanTien;
 IF OBJECT_ID('dbo.HoaDon', 'U') IS NOT NULL DROP TABLE dbo.HoaDon;

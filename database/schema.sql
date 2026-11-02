@@ -4,6 +4,16 @@
 -- Quy tac: PK_, FK_, UQ_, CK_, DF_ | PK INT IDENTITY | DECIMAL cho tien
 -- =====================================================
 
+-- Bang Sprint 3 tro toi Mon/TaiKhoan/DonHang -> phai xoa truoc (tao lai bang schema_sprint3.sql)
+IF OBJECT_ID('dbo.LichSuKho', 'U') IS NOT NULL DROP TABLE dbo.LichSuKho;
+IF OBJECT_ID('dbo.ChiTietPhieuNhap', 'U') IS NOT NULL DROP TABLE dbo.ChiTietPhieuNhap;
+IF OBJECT_ID('dbo.PhieuNhap', 'U') IS NOT NULL DROP TABLE dbo.PhieuNhap;
+IF OBJECT_ID('dbo.NhaCungCap', 'U') IS NOT NULL DROP TABLE dbo.NhaCungCap;
+IF OBJECT_ID('dbo.CongThucLichSu', 'U') IS NOT NULL DROP TABLE dbo.CongThucLichSu;
+IF OBJECT_ID('dbo.CongThuc', 'U') IS NOT NULL DROP TABLE dbo.CongThuc;
+IF OBJECT_ID('dbo.NguyenLieu', 'U') IS NOT NULL DROP TABLE dbo.NguyenLieu;
+GO
+
 -- Bang Sprint 2 tro toi Mon/TaiKhoan -> phai xoa truoc (tao lai bang schema_sprint2.sql)
 IF OBJECT_ID('dbo.HoanTien', 'U') IS NOT NULL DROP TABLE dbo.HoanTien;
 IF OBJECT_ID('dbo.HoaDon', 'U') IS NOT NULL DROP TABLE dbo.HoaDon;
