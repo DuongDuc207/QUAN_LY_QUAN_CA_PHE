@@ -12,12 +12,25 @@ ADMIN_MK = "admin123"
 NV_EMAIL = "pytest-nhanvien@test.local"
 NV_MK = "nhanvien123"
 
-# Duoc dien khi tao: id nhom mon dang co 1 mon (dung de thu "khong xoa duoc").
+# Duoc dien khi tao: id nhom mon dang co mon (dung de thu "khong xoa duoc").
 DANH_MUC_ID = None
+# Mon dung cho Sprint 2: 2 mon dang ban + 1 mon ngung ban.
+MON_ID = None        # 10.000
+MON2_ID = None       # 25.000
+MON_NGUNG_ID = None
+
+
+def _them_mon(cur, ten, gia, dang_ban=1):
+    cur.execute(
+        "INSERT INTO dbo.Mon (DanhMucID, TenMon, GiaBan, TrangThai, NgayTao) "
+        "OUTPUT INSERTED.MonID VALUES (?, ?, ?, ?, SYSDATETIME())",
+        (DANH_MUC_ID, ten, gia, dang_ban),
+    )
+    return cur.fetchval()
 
 
 def tao():
-    global DANH_MUC_ID
+    global DANH_MUC_ID, MON_ID, MON2_ID, MON_NGUNG_ID
     with get_connection() as conn:
         cur = conn.cursor()
         xoa_cur(cur)  # lan chay truoc bi ngat giua chung
@@ -35,15 +48,27 @@ def tao():
             "OUTPUT INSERTED.DanhMucID VALUES (N'Pytest Nhom', 1, SYSDATETIME())"
         )
         DANH_MUC_ID = cur.fetchval()
-        cur.execute(
-            "INSERT INTO dbo.Mon (DanhMucID, TenMon, GiaBan, TrangThai, NgayTao) "
-            "VALUES (?, N'Pytest Mon Co San', 10000, 1, SYSDATETIME())",
-            (DANH_MUC_ID,),
-        )
+        MON_ID = _them_mon(cur, "Pytest Mon Co San", 10000)
+        MON2_ID = _them_mon(cur, "Pytest Mon Hai", 25000)
+        MON_NGUNG_ID = _them_mon(cur, "Pytest Mon Ngung", 15000, dang_ban=0)
         conn.commit()
 
 
 def xoa_cur(cur):
+    # Don hang cua tai khoan test (Sprint 2) phai xoa truoc vi tro toi TaiKhoan/Mon.
+    don_test = (
+        "SELECT d.DonHangID FROM dbo.DonHang d LEFT JOIN dbo.TaiKhoan t ON t.TaiKhoanID = d.TaiKhoanID "
+        "WHERE t.Email LIKE 'pytest%@test.local' OR EXISTS (SELECT 1 FROM dbo.ChiTietDonHang c "
+        "  JOIN dbo.Mon m ON m.MonID = c.MonID WHERE c.DonHangID = d.DonHangID "
+        "  AND (m.TenMon LIKE N'Pytest%' OR m.TenMon LIKE N'Mon Pytest%'))"
+    )
+    cur.execute(
+        f"DELETE h FROM dbo.HoanTien h JOIN dbo.ThanhToan p ON p.ThanhToanID = h.ThanhToanID "
+        f"WHERE p.DonHangID IN ({don_test})"
+    )
+    for bang in ("HoaDon", "ThanhToan", "ChiTietDonHang"):
+        cur.execute(f"DELETE FROM dbo.{bang} WHERE DonHangID IN ({don_test})")
+    cur.execute(f"DELETE FROM dbo.DonHang WHERE DonHangID IN ({don_test})")
     cur.execute(
         "DELETE m FROM dbo.Mon m JOIN dbo.DanhMuc d ON d.DanhMucID = m.DanhMucID "
         "WHERE d.TenDanhMuc LIKE N'Pytest%' OR d.TenDanhMuc LIKE N'DM Pytest%'"

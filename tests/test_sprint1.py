@@ -74,15 +74,22 @@ def test_vai_tro_quyen_va_phan_quyen(client):
     login(client)
     assert client.get("/api/v1/roles").status_code == 200
     assert len(client.get("/api/v1/permissions").get_json()["data"]) >= 7
-    r = client.put("/api/v1/roles/3/permissions", json={"quyen_ids": [6]})
-    assert r.status_code == 200
+    # Giu quyen hien tai cua Nhan vien de tra lai sau (CSDL that, khong duoc lam mat quyen).
+    roles = client.get("/api/v1/roles").get_json()["data"]
+    perms = {q["TenQuyen"]: q["QuyenID"] for q in client.get("/api/v1/permissions").get_json()["data"]}
+    cu = [perms[t] for t in next(r for r in roles if r["VaiTroID"] == 3)["Quyens"]]
+    try:
+        r = client.put("/api/v1/roles/3/permissions", json={"quyen_ids": [6]})
+        assert r.status_code == 200
 
-    # Nhan vien bi chan API can quyen cao
-    staff = create_staff_client()
-    r = staff.get("/api/v1/accounts")
-    assert r.status_code == 403
-    r = staff.post("/api/v1/menu", json={"ten_mon": "X", "danh_muc_id": dl.DANH_MUC_ID, "gia_ban": 10})
-    assert r.status_code == 403
+        # Nhan vien bi chan API can quyen cao
+        staff = create_staff_client()
+        r = staff.get("/api/v1/accounts")
+        assert r.status_code == 403
+        r = staff.post("/api/v1/menu", json={"ten_mon": "X", "danh_muc_id": dl.DANH_MUC_ID, "gia_ban": 10})
+        assert r.status_code == 403
+    finally:
+        client.put("/api/v1/roles/3/permissions", json={"quyen_ids": cu})
 
 
 def create_staff_client():

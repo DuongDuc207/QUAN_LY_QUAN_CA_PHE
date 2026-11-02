@@ -69,7 +69,7 @@ def test_quan_tri_thay_day_du_muc_dieu_huong(client):
 
 
 # ---------- Khong lo thuat ngu backend ----------
-@pytest.mark.parametrize("duong_dan", ["/dashboard", "/accounts", "/menu", "/roles"])
+@pytest.mark.parametrize("duong_dan", ["/dashboard", "/accounts", "/menu", "/roles", "/pos", "/orders"])
 def test_khong_lo_thuat_ngu_ky_thuat(client, duong_dan):
     login(client)
     text = van_ban_hien_thi(client.get(duong_dan).get_data(as_text=True))
@@ -91,7 +91,7 @@ def test_class_hidden_thang_moi_luat_display():
     assert re.search(r"\.hidden\s*\{\s*display:\s*none\s*!important", css)
 
 
-@pytest.mark.parametrize("duong_dan", ["/accounts", "/menu"])
+@pytest.mark.parametrize("duong_dan", ["/accounts", "/menu", "/pos", "/orders"])
 def test_hop_thoai_mac_dinh_an(client, duong_dan):
     login(client)
     html = client.get(duong_dan).get_data(as_text=True)
@@ -102,8 +102,39 @@ def test_hop_thoai_mac_dinh_an(client, duong_dan):
         assert "hidden" in cls.split(), f"Hop thoai khong an san: {cls}"
 
 
-# ---------- Do phu 21 API ----------
-def test_giao_dien_dung_du_21_api():
+# ---------- Sprint 2: trang ban hang / don hang ----------
+def test_nhan_vien_thay_ban_hang_va_don_hang(client):
+    login(client, dl.NV_EMAIL, dl.NV_MK)
+    html = client.get("/dashboard").get_data(as_text=True)
+    nav = re.search(r"<nav class=\"nav\">(.*?)</nav>", html, re.S).group(1)
+    assert "Bán hàng" in nav and "Đơn hàng" in nav
+    assert client.get("/pos").status_code == 200
+    assert client.get("/orders").status_code == 200
+
+
+def test_chua_dang_nhap_khong_vao_ban_hang(client):
+    for p in ("/pos", "/orders"):
+        r = client.get(p)
+        assert r.status_code == 302 and "/login" in r.headers["Location"]
+
+
+def test_ma_trang_thai_chi_nam_trong_main_js():
+    """Template khong viet ma he thong (HOAT_DONG, CHO_PHA_CHE...) - de doi nhan 1 noi."""
+    ma = ["HOAT_DONG", "KHOA", "CHO_PHA_CHE", "DANG_PHA_CHE", "HOAN_THANH", "DA_HUY",
+          "THANH_CONG", "CHO_XAC_NHAN", "CHUA_THANH_TOAN", "HOAN_MOT_PHAN", "DA_HOAN_TIEN"]
+    for p in (FRONTEND / "templates").rglob("*.html"):
+        if p.name == "print.html":
+            continue  # trang in co bang nhan rieng (Jinja), da kiem o test_sprint2
+        text = p.read_text(encoding="utf-8")
+        lo = [m for m in ma if re.search(rf"['\"]{m}['\"]", text)]
+        assert not lo, f"{p.name} viet thang ma he thong: {lo}"
+    js = (FRONTEND / "static" / "js" / "orders.js").read_text(encoding="utf-8")
+    lo = [m for m in ma if re.search(rf"['\"]{m}['\"]", js)]
+    assert not lo, f"orders.js viet thang ma he thong: {lo}"
+
+
+# ---------- Do phu API (Sprint 1: 21, Sprint 2: 17) ----------
+def test_giao_dien_dung_du_38_api():
     app = create_app()
     api = set()
     for rule in app.url_map.iter_rules():
@@ -111,7 +142,7 @@ def test_giao_dien_dung_du_21_api():
         if "/api/v1" in path:
             for method in rule.methods - {"HEAD", "OPTIONS"}:
                 api.add((method, path.replace("/api/v1", "")))
-    assert len(api) == 21, f"Backend co {len(api)} API, mong doi 21"
+    assert len(api) == 38, f"Backend co {len(api)} API, mong doi 38"
 
     source = ""
     for p in FRONTEND.rglob("*"):
