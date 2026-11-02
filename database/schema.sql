@@ -4,6 +4,14 @@
 -- Quy tac: PK_, FK_, UQ_, CK_, DF_ | PK INT IDENTITY | DECIMAL cho tien
 -- =====================================================
 
+-- Bang Sprint 2 tro toi Mon/TaiKhoan -> phai xoa truoc (tao lai bang schema_sprint2.sql)
+IF OBJECT_ID('dbo.HoanTien', 'U') IS NOT NULL DROP TABLE dbo.HoanTien;
+IF OBJECT_ID('dbo.HoaDon', 'U') IS NOT NULL DROP TABLE dbo.HoaDon;
+IF OBJECT_ID('dbo.ThanhToan', 'U') IS NOT NULL DROP TABLE dbo.ThanhToan;
+IF OBJECT_ID('dbo.ChiTietDonHang', 'U') IS NOT NULL DROP TABLE dbo.ChiTietDonHang;
+IF OBJECT_ID('dbo.DonHang', 'U') IS NOT NULL DROP TABLE dbo.DonHang;
+GO
+
 -- Xoa theo thu tu FK nguoc (Mon -> TaiKhoan -> VaiTroQuyen -> Quyen/VaiTro/DanhMuc)
 IF OBJECT_ID('dbo.Mon', 'U') IS NOT NULL DROP TABLE dbo.Mon;
 IF OBJECT_ID('dbo.TaiKhoan', 'U') IS NOT NULL DROP TABLE dbo.TaiKhoan;
