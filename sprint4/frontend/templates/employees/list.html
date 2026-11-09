@@ -1,0 +1,291 @@
+{% extends "layout.html" %}
+{% block title %}Hồ sơ nhân viên - Cà Phê Việt{% endblock %}
+{% block head %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/sprint4.css', v=1) }}">
+{% endblock %}
+{% block content %}
+{% set co_quan_ly = 'employee.manage' in (user.quyens or []) %}
+
+<div class="page-head pos-head">
+  <div>
+    <h2>Hồ sơ nhân viên</h2>
+    <p class="muted">Thông tin liên hệ, vị trí và tình trạng làm việc của từng người trong quán.</p>
+  </div>
+  <div class="kho-head-nut">
+    <a class="btn btn-outline" href="/schedules">Ca làm và lịch làm</a>
+    {% if co_quan_ly %}
+      <button type="button" id="btn-add">+ Thêm nhân viên</button>
+    {% endif %}
+  </div>
+</div>
+
+<div class="toolbar">
+  <div class="search-box">
+    <span class="search-icon">🔍</span>
+    <input id="search-input" type="search" placeholder="Tìm theo tên, mã, số điện thoại" aria-label="Tìm nhân viên">
+  </div>
+  <select id="filter-status" class="filter-select" aria-label="Lọc theo tình trạng làm việc">
+    <option value="">Tất cả</option>
+  </select>
+</div>
+
+<div id="page-error" class="alert error hidden"></div>
+
+<div class="table-wrap">
+  <table class="table" id="nv-table">
+    <thead>
+      <tr>
+        <th>Nhân viên</th>
+        <th>Vị trí</th>
+        <th>Liên hệ</th>
+        <th>Tài khoản đăng nhập</th>
+        <th>Tình trạng</th>
+        <th class="col-actions">Thao tác</th>
+      </tr>
+    </thead>
+    <tbody><tr class="empty-row"><td colspan="6">Đang tải...</td></tr></tbody>
+  </table>
+</div>
+<div class="pager" id="pager"></div>
+
+<!-- Them / sua -->
+<div class="modal hidden" id="modal-nv" role="dialog" aria-modal="true" aria-labelledby="nv-title">
+  <div class="modal-card modal-wide">
+    <div class="modal-head">
+      <h3 id="nv-title">Thêm nhân viên</h3>
+      <button type="button" class="modal-close" data-dong-modal="modal-nv" aria-label="Đóng">×</button>
+    </div>
+    <form id="nv-form" novalidate>
+      <div class="modal-body">
+        <div id="nv-error" class="alert error hidden" role="alert"></div>
+        <input type="hidden" name="id">
+        <div class="form-row">
+          <label>Họ tên
+            <input type="text" name="ho_ten" maxlength="100" required>
+          </label>
+          <label>Mã nhân viên
+            <input type="text" name="ma_nhan_vien" maxlength="30" placeholder="Để trống để tự tạo">
+          </label>
+        </div>
+        <div class="form-row">
+          <label>Vị trí
+            <input type="text" name="chuc_vu" maxlength="50" placeholder="Pha chế, thu ngân, phục vụ...">
+          </label>
+          <label>Ngày vào làm
+            <input type="date" name="ngay_vao_lam">
+          </label>
+        </div>
+        <div class="form-row">
+          <label>Số điện thoại
+            <input type="tel" name="so_dien_thoai" maxlength="15">
+          </label>
+          <label>Tài khoản đăng nhập
+            <select name="tai_khoan_id" id="nv-tai-khoan"><option value="">Chưa gắn</option></select>
+            <span class="field-hint">Gắn để nhân viên tự xem lịch làm của mình.</span>
+          </label>
+        </div>
+        <label>Địa chỉ
+          <input type="text" name="dia_chi" maxlength="255">
+        </label>
+      </div>
+      <div class="modal-foot">
+        <button type="button" class="btn-outline" data-dong-modal="modal-nv">Huỷ</button>
+        <button type="submit" id="btn-save">Lưu</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- Chi tiet -->
+<div class="modal hidden" id="modal-detail" role="dialog" aria-modal="true" aria-labelledby="detail-title">
+  <div class="modal-card modal-wide">
+    <div class="modal-head">
+      <h3 id="detail-title">Nhân viên</h3>
+      <button type="button" class="modal-close" data-dong-modal="modal-detail" aria-label="Đóng">×</button>
+    </div>
+    <div class="modal-body" id="detail-body"></div>
+    <div class="modal-foot" id="detail-foot"></div>
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+{% set co_quan_ly = 'employee.manage' in (user.quyens or []) %}
+<script>
+  const CO_QUAN_LY = {{ 'true' if co_quan_ly else 'false' }};
+  const CO_XEM_TAI_KHOAN = (window.QUYEN || []).includes("account.view");
+  const SO_DONG = 20;
+  const $ = (id) => document.getElementById(id);
+  const tbody = document.querySelector("#nv-table tbody");
+  const form = $("nv-form");
+  let ds = [];
+  let trang = 1;
+
+  luaChonTinhTrangNhanVien().forEach((o) => $("filter-status").add(new Option(o.nhan, o.ma)));
+
+  async function napTaiKhoan(daChon) {
+    const sel = $("nv-tai-khoan");
+    sel.innerHTML = `<option value="">Chưa gắn</option>`;
+    if (!CO_XEM_TAI_KHOAN) {
+      sel.disabled = true;
+      return;
+    }
+    const r = await apiGoi("GET", "/api/v1/accounts");
+    if (!r.ok) return;
+    const items = Array.isArray(r.data) ? r.data : (r.data.items || []);
+    items.forEach((t) => sel.add(new Option(`${t.HoTen} (${t.Email})`, t.TaiKhoanID)));
+    sel.value = daChon ? String(daChon) : "";
+  }
+
+  function veBang(rows) {
+    ds = rows;
+    if (!rows.length) {
+      tbody.innerHTML = `<tr class="empty-row"><td colspan="6">Chưa có nhân viên nào phù hợp.</td></tr>`;
+      return;
+    }
+    tbody.innerHTML = rows.map((n) => `<tr>
+        <td><div class="cell-name">${escapeHtml(n.HoTen)}</div><div class="cell-sub">${escapeHtml(n.MaNhanVien)}</div></td>
+        <td>${escapeHtml(n.ChucVu || "—")}</td>
+        <td class="cell-sub">${escapeHtml(n.SoDienThoai || "—")}</td>
+        <td class="cell-sub">${n.EmailTaiKhoan ? escapeHtml(n.EmailTaiKhoan) : "Chưa gắn"}</td>
+        <td>${huyHieuNhanVien(n.TrangThai)}</td>
+        <td class="col-actions"><div class="row-actions">
+          <button type="button" class="btn-icon" data-xem="${n.NhanVienID}">Chi tiết</button>
+          ${CO_QUAN_LY ? `<button type="button" class="btn-icon" data-sua="${n.NhanVienID}">Sửa</button>` : ""}
+        </div></td>
+      </tr>`).join("");
+  }
+
+  async function load() {
+    $("page-error").classList.add("hidden");
+    const p = new URLSearchParams({page: trang, per_page: SO_DONG});
+    const q = $("search-input").value.trim();
+    if (q) p.set("q", q);
+    if ($("filter-status").value) p.set("status", $("filter-status").value);
+    const r = await apiGoi("GET", "/api/v1/employees?" + p.toString());
+    if (!r.ok) {
+      if (kiemTraHetPhien(r.status)) return;
+      $("page-error").textContent = thongBaoLoi(r.status, "danh sách nhân viên");
+      $("page-error").classList.remove("hidden");
+      tbody.innerHTML = `<tr class="empty-row"><td colspan="6">Không có dữ liệu để hiển thị.</td></tr>`;
+      return;
+    }
+    veBang(r.data.items);
+    const total = r.data.total;
+    const soTrang = Math.max(1, Math.ceil(total / SO_DONG));
+    $("pager").innerHTML = total <= SO_DONG ? (total ? `<span class="muted">${total} nhân viên</span>` : "")
+      : `<span class="muted">Trang ${trang}/${soTrang}</span>
+        <button type="button" class="btn-outline" data-trang="${trang - 1}" ${trang <= 1 ? "disabled" : ""}>‹ Trước</button>
+        <button type="button" class="btn-outline" data-trang="${trang + 1}" ${trang >= soTrang ? "disabled" : ""}>Sau ›</button>`;
+  }
+
+  async function xemChiTiet(id) {
+    const r = await apiGoi("GET", `/api/v1/employees/${id}`);
+    if (!r.ok) { if (!kiemTraHetPhien(r.status)) hienToast(r.loi); return; }
+    const n = r.data;
+    $("detail-title").textContent = n.HoTen;
+    const lich = n.LichSapToi || [];
+    $("detail-body").innerHTML = `
+      <dl class="detail-list">
+        <div class="detail-row"><dt>Mã nhân viên</dt><dd>${escapeHtml(n.MaNhanVien)}</dd></div>
+        <div class="detail-row"><dt>Tình trạng</dt><dd>${huyHieuNhanVien(n.TrangThai)}</dd></div>
+        <div class="detail-row"><dt>Vị trí</dt><dd>${escapeHtml(n.ChucVu || "Chưa có")}</dd></div>
+        <div class="detail-row"><dt>Ngày vào làm</dt><dd>${n.NgayVaoLam ? new Date(n.NgayVaoLam + "T00:00:00").toLocaleDateString("vi-VN") : "Chưa có"}</dd></div>
+        <div class="detail-row"><dt>Số điện thoại</dt><dd>${escapeHtml(n.SoDienThoai || "Chưa có")}</dd></div>
+        <div class="detail-row"><dt>Địa chỉ</dt><dd>${escapeHtml(n.DiaChi || "Chưa có")}</dd></div>
+        <div class="detail-row"><dt>Tài khoản đăng nhập</dt><dd>${escapeHtml(n.EmailTaiKhoan || "Chưa gắn")}</dd></div>
+      </dl>
+      <h4 class="sub-title">Lịch làm sắp tới</h4>
+      ${lich.length ? `<table class="line-table"><tbody>${lich.map((l) => `<tr>
+          <td>${new Date(l.NgayLam + "T00:00:00").toLocaleDateString("vi-VN", {weekday: "short", day: "2-digit", month: "2-digit"})}</td>
+          <td>${escapeHtml(l.TenCa)}<div class="cell-sub">${l.GioBatDau} – ${l.GioKetThuc}</div></td>
+          <td>${huyHieuLich(l.TrangThai)}</td></tr>`).join("")}</tbody></table>`
+        : `<p class="muted">Chưa được xếp lịch sắp tới.</p>`}`;
+    const foot = [`<button type="button" class="btn-outline" data-dong-modal="modal-detail">Đóng</button>`];
+    if (CO_QUAN_LY) {
+      luaChonTinhTrangNhanVien().filter((o) => o.ma !== n.TrangThai).forEach((o) =>
+        foot.unshift(`<button type="button" class="btn-outline" data-doi="${o.ma}" data-id="${n.NhanVienID}">Chuyển sang: ${escapeHtml(o.nhan)}</button>`));
+    }
+    $("detail-foot").innerHTML = foot.join("");
+    moModal("modal-detail");
+  }
+
+  $("detail-foot").addEventListener("click", async (e) => {
+    const b = e.target.closest("button[data-doi]");
+    if (!b) return;
+    const nhan = b.textContent.replace("Chuyển sang: ", "");
+    if (!(await xacNhan(`Chuyển nhân viên sang "${nhan}"?`, {nhanDongY: "Chuyển"}))) return;
+    const r = await apiGoi("PATCH", `/api/v1/employees/${b.dataset.id}/status`, {trang_thai: b.dataset.doi});
+    if (!r.ok) { if (!kiemTraHetPhien(r.status)) hienToast(r.loi); return; }
+    hienToast(r.data.SoLichDaHuy ? `Đã cập nhật. Đã huỷ ${r.data.SoLichDaHuy} lịch làm sắp tới.` : "Đã cập nhật tình trạng.");
+    dongModal("modal-detail");
+    load();
+  });
+
+  async function moForm(n) {
+    form.reset();
+    $("nv-error").classList.add("hidden");
+    form.id.value = n ? n.NhanVienID : "";
+    $("nv-title").textContent = n ? "Sửa hồ sơ nhân viên" : "Thêm nhân viên";
+    if (n) {
+      form.ho_ten.value = n.HoTen || "";
+      form.ma_nhan_vien.value = n.MaNhanVien || "";
+      form.chuc_vu.value = n.ChucVu || "";
+      form.ngay_vao_lam.value = n.NgayVaoLam || "";
+      form.so_dien_thoai.value = n.SoDienThoai || "";
+      form.dia_chi.value = n.DiaChi || "";
+    }
+    await napTaiKhoan(n ? n.TaiKhoanID : null);
+    moModal("modal-nv");
+  }
+
+  form.addEventListener("submit", async (e) => {
+    e.preventDefault();
+    const err = $("nv-error");
+    err.classList.add("hidden");
+    const id = form.id.value;
+    const body = {
+      ho_ten: form.ho_ten.value.trim(),
+      chuc_vu: form.chuc_vu.value.trim(),
+      ngay_vao_lam: form.ngay_vao_lam.value,
+      so_dien_thoai: form.so_dien_thoai.value.trim(),
+      dia_chi: form.dia_chi.value.trim(),
+    };
+    const ma = form.ma_nhan_vien.value.trim();
+    if (ma || id) body.ma_nhan_vien = ma;
+    if (CO_XEM_TAI_KHOAN) body.tai_khoan_id = $("nv-tai-khoan").value;
+    if (!body.ho_ten) { err.textContent = "Vui lòng nhập họ tên nhân viên."; err.classList.remove("hidden"); return; }
+    const btn = $("btn-save");
+    btn.disabled = true;
+    const r = id ? await apiGoi("PUT", `/api/v1/employees/${id}`, body) : await apiGoi("POST", "/api/v1/employees", body);
+    btn.disabled = false;
+    if (!r.ok) {
+      if (kiemTraHetPhien(r.status)) return;
+      err.textContent = r.loi;
+      err.classList.remove("hidden");
+      return;
+    }
+    dongModal("modal-nv");
+    hienToast(id ? "Đã cập nhật hồ sơ." : "Đã thêm nhân viên.");
+    load();
+  });
+
+  tbody.addEventListener("click", (e) => {
+    const b = e.target.closest("button");
+    if (!b) return;
+    if (b.dataset.xem) xemChiTiet(b.dataset.xem);
+    else if (b.dataset.sua) moForm(ds.find((x) => String(x.NhanVienID) === b.dataset.sua));
+  });
+  $("pager").addEventListener("click", (e) => {
+    const b = e.target.closest("button[data-trang]");
+    if (b && !b.disabled) { trang = Number(b.dataset.trang); load(); }
+  });
+  let timer;
+  $("search-input").addEventListener("input", () => { clearTimeout(timer); timer = setTimeout(() => { trang = 1; load(); }, 300); });
+  $("filter-status").addEventListener("change", () => { trang = 1; load(); });
+  const btnAdd = $("btn-add");
+  if (btnAdd) btnAdd.addEventListener("click", () => moForm(null));
+
+  load();
+</script>
+{% endblock %}

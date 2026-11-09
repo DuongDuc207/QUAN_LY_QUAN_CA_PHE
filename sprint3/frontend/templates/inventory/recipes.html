@@ -1,0 +1,83 @@
+{% extends "layout.html" %}
+{% block title %}Công thức pha chế - Cà Phê Việt{% endblock %}
+{% block head %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/kho.css', v=1) }}">
+{% endblock %}
+{% block content %}
+{% set co_quan_ly = 'inventory.manage' in (user.quyens or []) %}
+
+<div id="trang-cong-thuc" class="kho-page">
+  <div class="page-head">
+    <h2>Công thức pha chế</h2>
+    <p class="muted">Mỗi món dùng bao nhiêu nguyên liệu cho một phần, và với tồn kho hiện tại pha được khoảng mấy phần.</p>
+  </div>
+
+  <div id="ct-loi-trang" class="alert error hidden" role="alert"></div>
+
+  <div class="kho-chia">
+    <!-- Danh sach mon -->
+    <aside class="kho-trai" aria-label="Danh sách món">
+      <div class="kho-loc-mon">
+        <div class="search-box">
+          <span class="search-icon" aria-hidden="true">🔍</span>
+          <input id="cm-tim" type="search" placeholder="Tìm món..." aria-label="Tìm món" maxlength="100">
+        </div>
+        <select id="cm-nhom" class="filter-select" aria-label="Lọc theo nhóm món">
+          <option value="">Tất cả nhóm</option>
+        </select>
+        <select id="cm-co" class="filter-select" aria-label="Lọc theo việc đã có công thức">
+          <option value="">Tất cả món</option>
+          <option value="co">Đã có công thức</option>
+          <option value="chua">Chưa có công thức</option>
+        </select>
+      </div>
+      <p class="muted kho-dem" id="cm-dem" aria-live="polite"></p>
+      <ul class="kho-ds-mon" id="cm-ds">
+        <li class="kho-trong">Đang tải danh sách món...</li>
+      </ul>
+    </aside>
+
+    <!-- Cong thuc cua mon dang chon -->
+    <section class="kho-phai" id="ct-phai" aria-live="polite" aria-label="Công thức của món đang chọn">
+      <p class="kho-trong">Chọn một món ở bên trái để xem công thức.</p>
+    </section>
+  </div>
+</div>
+
+{% if co_quan_ly %}
+<!-- Sua cong thuc -->
+<div class="modal hidden" id="modal-sua-ct" role="dialog" aria-modal="true" aria-labelledby="sua-ct-tieu-de">
+  <div class="modal-card modal-wide">
+    <div class="modal-head">
+      <h3 id="sua-ct-tieu-de">Sửa công thức</h3>
+      <button type="button" class="modal-close" data-dong-modal="modal-sua-ct" aria-label="Đóng">×</button>
+    </div>
+    <form id="sua-ct-form" novalidate>
+      <div class="modal-body">
+        <div id="sua-ct-loi" class="alert error hidden" role="alert"></div>
+        <p class="muted small" style="margin:0 0 12px">
+          Nhập lượng nguyên liệu cho <strong>một phần</strong>. Mỗi nguyên liệu chỉ xuất hiện một lần.
+        </p>
+        <div class="kho-dong-tieude" aria-hidden="true">
+          <span>Nguyên liệu</span><span>Định lượng cho 1 phần</span><span></span>
+        </div>
+        <div id="sua-ct-dong"></div>
+        <button type="button" class="btn-outline kho-btn-phu" id="sua-ct-them">+ Thêm nguyên liệu</button>
+        <label>Lý do thay đổi (không bắt buộc)
+          <textarea name="ly_do" rows="2" maxlength="500" placeholder="Ví dụ: Đổi lượng sữa theo khẩu vị mới"></textarea>
+        </label>
+      </div>
+      <div class="modal-foot">
+        <button type="button" class="btn-outline" data-dong-modal="modal-sua-ct">Huỷ</button>
+        <button type="submit" id="btn-luu-ct">Lưu công thức</button>
+      </div>
+    </form>
+  </div>
+</div>
+{% endif %}
+{% endblock %}
+
+{% block scripts %}
+<script src="{{ url_for('static', filename='js/kho.js', v=1) }}"></script>
+<script src="{{ url_for('static', filename='js/cong_thuc.js', v=1) }}"></script>
+{% endblock %}

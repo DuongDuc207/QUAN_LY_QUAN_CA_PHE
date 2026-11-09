@@ -1,0 +1,314 @@
+{% extends "layout.html" %}
+{% block title %}Khuyến mãi - Cà Phê Việt{% endblock %}
+{% block head %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/sprint4.css', v=1) }}">
+{% endblock %}
+{% block content %}
+{% set co_quan_ly = 'promotion.manage' in (user.quyens or []) %}
+
+<div class="page-head pos-head">
+  <div>
+    <h2>Khuyến mãi</h2>
+    <p class="muted">Mã giảm giá áp dụng khi bán hàng, thời gian chạy và số lượt khách đã dùng.</p>
+  </div>
+  {% if co_quan_ly %}
+    <button type="button" id="btn-add">+ Tạo chương trình</button>
+  {% endif %}
+</div>
+
+<div class="toolbar">
+  <div class="search-box">
+    <span class="search-icon">🔍</span>
+    <input id="search-input" type="search" placeholder="Tìm theo mã hoặc tên chương trình" aria-label="Tìm khuyến mãi">
+  </div>
+  <select id="filter-status" class="filter-select" aria-label="Lọc theo tình trạng">
+    <option value="">Tất cả tình trạng</option>
+  </select>
+</div>
+
+<div id="page-error" class="alert error hidden"></div>
+
+<div class="table-wrap">
+  <table class="table" id="km-table">
+    <thead>
+      <tr>
+        <th>Chương trình</th>
+        <th>Mức giảm</th>
+        <th>Thời gian</th>
+        <th class="col-num">Đã dùng</th>
+        <th>Tình trạng</th>
+        <th class="col-actions">Thao tác</th>
+      </tr>
+    </thead>
+    <tbody><tr class="empty-row"><td colspan="6">Đang tải...</td></tr></tbody>
+  </table>
+</div>
+<div class="pager" id="pager"></div>
+
+<!-- Tao / sua -->
+<div class="modal hidden" id="modal-km" role="dialog" aria-modal="true" aria-labelledby="km-title">
+  <div class="modal-card modal-wide">
+    <div class="modal-head">
+      <h3 id="km-title">Tạo chương trình khuyến mãi</h3>
+      <button type="button" class="modal-close" data-dong-modal="modal-km" aria-label="Đóng">×</button>
+    </div>
+    <form id="km-form" novalidate>
+      <div class="modal-body">
+        <div id="km-error" class="alert error hidden" role="alert"></div>
+        <input type="hidden" name="id">
+        <div class="form-row">
+          <label>Mã khách nhập
+            <input type="text" name="ma_khuyen_mai" maxlength="50" required placeholder="GIAM10" autocapitalize="characters">
+            <span class="field-hint">Chữ không dấu, số, dấu gạch. Không phân biệt hoa thường.</span>
+          </label>
+          <label>Tên chương trình
+            <input type="text" name="ten_khuyen_mai" maxlength="150" required placeholder="Giảm 10% cuối tuần">
+          </label>
+        </div>
+        <div class="form-row">
+          <label>Cách giảm
+            <select name="loai_giam_gia" id="km-loai"></select>
+          </label>
+          <label><span id="km-gia-tri-nhan">Mức giảm</span>
+            <input type="number" name="gia_tri_giam" min="0" step="any" required>
+          </label>
+        </div>
+        <div class="form-row">
+          <label>Đơn tối thiểu (₫)
+            <input type="number" name="don_hang_toi_thieu" min="0" step="1000" placeholder="0">
+          </label>
+          <label id="km-tran-wrap">Giảm tối đa (₫)
+            <input type="number" name="giam_toi_da" min="0" step="1000" placeholder="Không giới hạn">
+          </label>
+        </div>
+        <div class="form-row">
+          <label>Bắt đầu
+            <input type="datetime-local" name="ngay_bat_dau" required>
+          </label>
+          <label>Kết thúc
+            <input type="datetime-local" name="ngay_ket_thuc" required>
+          </label>
+        </div>
+        <label>Số lượt dùng tối đa
+          <input type="number" name="so_luong_su_dung" min="1" step="1" placeholder="Không giới hạn">
+        </label>
+      </div>
+      <div class="modal-foot">
+        <button type="button" class="btn-outline" data-dong-modal="modal-km">Huỷ</button>
+        <button type="submit" id="btn-save">Lưu</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- Chi tiet + luot dung -->
+<div class="modal hidden" id="modal-detail" role="dialog" aria-modal="true" aria-labelledby="detail-title">
+  <div class="modal-card modal-wide">
+    <div class="modal-head">
+      <h3 id="detail-title">Khuyến mãi</h3>
+      <button type="button" class="modal-close" data-dong-modal="modal-detail" aria-label="Đóng">×</button>
+    </div>
+    <div class="modal-body" id="detail-body"></div>
+    <div class="modal-foot">
+      <button type="button" class="btn-outline" data-dong-modal="modal-detail">Đóng</button>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+{% set co_quan_ly = 'promotion.manage' in (user.quyens or []) %}
+<script>
+  const CO_QUAN_LY = {{ 'true' if co_quan_ly else 'false' }};
+  const SO_DONG = 20;
+  const $ = (id) => document.getElementById(id);
+  const tbody = document.querySelector("#km-table tbody");
+  const form = $("km-form");
+  let ds = [];
+  let trang = 1;
+
+  luaChonTinhTrangKhuyenMai().forEach((o) => $("filter-status").add(new Option(o.nhan, o.ma)));
+  luaChonCachGiam().forEach((o) => $("km-loai").add(new Option(o.nhan, o.ma)));
+
+  /** "2026-10-23T08:00:00" -> "08:00 23/10/2026" */
+  const tg = (v) => dinhDangThoiGian(v);
+  const choInput = (v) => (v ? String(v).slice(0, 16) : "");
+
+  function capNhatTheoLoai() {
+    const phanTram = giamTheoPhanTram({LoaiGiamGia: $("km-loai").value});
+    $("km-gia-tri-nhan").textContent = phanTram ? "Mức giảm (%)" : "Mức giảm (₫)";
+    form.gia_tri_giam.max = phanTram ? "100" : "";
+    $("km-tran-wrap").classList.toggle("hidden", !phanTram);
+  }
+  $("km-loai").addEventListener("change", capNhatTheoLoai);
+
+  function veBang(rows) {
+    ds = rows;
+    if (!rows.length) {
+      tbody.innerHTML = `<tr class="empty-row"><td colspan="6">Chưa có chương trình nào phù hợp.</td></tr>`;
+      return;
+    }
+    tbody.innerHTML = rows.map((k) => {
+      const luot = k.SoLuongSuDung ? `${k.SoLuotDaDung}/${k.SoLuongSuDung}` : String(k.SoLuotDaDung);
+      return `<tr>
+        <td><div class="cell-name"><span class="km-ma">${escapeHtml(k.MaKhuyenMai)}</span></div>
+          <div class="cell-sub">${escapeHtml(k.TenKhuyenMai)}</div></td>
+        <td>${escapeHtml(moTaMucGiam(k))}
+          ${Number(k.DonHangToiThieu) > 0 ? `<div class="cell-sub">Đơn từ ${dinhDangGia(k.DonHangToiThieu)}</div>` : ""}</td>
+        <td class="cell-sub">${tg(k.NgayBatDau)}<br>→ ${tg(k.NgayKetThuc)}</td>
+        <td class="col-num">${luot}</td>
+        <td>${huyHieuKhuyenMai(k.TinhTrang)}</td>
+        <td class="col-actions"><div class="row-actions">
+          <button type="button" class="btn-icon" data-xem="${k.KhuyenMaiID}">Chi tiết</button>
+          ${CO_QUAN_LY ? `<button type="button" class="btn-icon" data-sua="${k.KhuyenMaiID}">Sửa</button>
+            <button type="button" class="btn-icon" data-bat="${k.KhuyenMaiID}">${k.TrangThai ? "Tắt" : "Bật lại"}</button>` : ""}
+        </div></td>
+      </tr>`;
+    }).join("");
+  }
+
+  async function load() {
+    $("page-error").classList.add("hidden");
+    const p = new URLSearchParams({page: trang, per_page: SO_DONG});
+    const q = $("search-input").value.trim();
+    if (q) p.set("q", q);
+    if ($("filter-status").value) p.set("status", $("filter-status").value);
+    const r = await apiGoi("GET", "/api/v1/promotions?" + p.toString());
+    if (!r.ok) {
+      if (kiemTraHetPhien(r.status)) return;
+      $("page-error").textContent = thongBaoLoi(r.status, "danh sách khuyến mãi");
+      $("page-error").classList.remove("hidden");
+      tbody.innerHTML = `<tr class="empty-row"><td colspan="6">Không có dữ liệu để hiển thị.</td></tr>`;
+      return;
+    }
+    veBang(r.data.items);
+    const total = r.data.total;
+    const soTrang = Math.max(1, Math.ceil(total / SO_DONG));
+    $("pager").innerHTML = total <= SO_DONG ? (total ? `<span class="muted">${total} chương trình</span>` : "")
+      : `<span class="muted">Trang ${trang}/${soTrang}</span>
+        <button type="button" class="btn-outline" data-trang="${trang - 1}" ${trang <= 1 ? "disabled" : ""}>‹ Trước</button>
+        <button type="button" class="btn-outline" data-trang="${trang + 1}" ${trang >= soTrang ? "disabled" : ""}>Sau ›</button>`;
+  }
+
+  async function xemChiTiet(id) {
+    const [r, u] = await Promise.all([
+      apiGoi("GET", `/api/v1/promotions/${id}`),
+      apiGoi("GET", `/api/v1/promotions/${id}/usage?per_page=20`),
+    ]);
+    if (!r.ok) { if (!kiemTraHetPhien(r.status)) hienToast(r.loi); return; }
+    const k = r.data;
+    const tk = u.ok ? u.data : null;
+    $("detail-title").textContent = k.TenKhuyenMai;
+    $("detail-body").innerHTML = `
+      <dl class="detail-list">
+        <div class="detail-row"><dt>Mã khách nhập</dt><dd class="km-ma">${escapeHtml(k.MaKhuyenMai)}</dd></div>
+        <div class="detail-row"><dt>Tình trạng</dt><dd>${huyHieuKhuyenMai(k.TinhTrang)}</dd></div>
+        <div class="detail-row"><dt>${escapeHtml(nhanCachGiam(k.LoaiGiamGia))}</dt><dd>${escapeHtml(moTaMucGiam(k))}</dd></div>
+        <div class="detail-row"><dt>Đơn tối thiểu</dt><dd>${Number(k.DonHangToiThieu) > 0 ? dinhDangGia(k.DonHangToiThieu) : "Không yêu cầu"}</dd></div>
+        <div class="detail-row"><dt>Thời gian</dt><dd>${tg(k.NgayBatDau)} → ${tg(k.NgayKetThuc)}</dd></div>
+        ${tk ? `<div class="detail-row"><dt>Đã dùng</dt><dd>${tk.SoLuot} lượt${tk.SoLuotConLai != null ? `, còn ${tk.SoLuotConLai}` : ""}</dd></div>
+        <div class="detail-row"><dt>Tổng tiền đã giảm cho khách</dt><dd>${dinhDangGia(tk.TongGiam)}</dd></div>
+        <div class="detail-row"><dt>Doanh thu từ các đơn này</dt><dd>${dinhDangGia(tk.TongThuSauGiam)}</dd></div>` : ""}
+      </dl>
+      <h4 class="sub-title">Đơn đã dùng mã</h4>
+      ${tk && tk.items.length ? `<table class="line-table"><tbody>${tk.items.map((d) => `<tr>
+          <td>${escapeHtml(d.MaDonHang)}<div class="cell-sub">${tg(d.NgaySuDung)}</div></td>
+          <td>${huyHieuDon(d.TrangThaiDon)}</td>
+          <td class="col-num">−${dinhDangGia(d.SoTienGiam)}</td></tr>`).join("")}</tbody></table>`
+        : `<p class="muted">Chưa có đơn nào dùng mã này.</p>`}`;
+    moModal("modal-detail");
+  }
+
+  function moForm(k) {
+    form.reset();
+    $("km-error").classList.add("hidden");
+    form.id.value = k ? k.KhuyenMaiID : "";
+    $("km-title").textContent = k ? "Sửa chương trình khuyến mãi" : "Tạo chương trình khuyến mãi";
+    if (k) {
+      form.ma_khuyen_mai.value = k.MaKhuyenMai;
+      form.ten_khuyen_mai.value = k.TenKhuyenMai;
+      $("km-loai").value = k.LoaiGiamGia;
+      form.gia_tri_giam.value = Number(k.GiaTriGiam);
+      form.don_hang_toi_thieu.value = Number(k.DonHangToiThieu) || "";
+      form.giam_toi_da.value = k.GiamToiDa ? Number(k.GiamToiDa) : "";
+      form.so_luong_su_dung.value = k.SoLuongSuDung || "";
+      form.ngay_bat_dau.value = choInput(k.NgayBatDau);
+      form.ngay_ket_thuc.value = choInput(k.NgayKetThuc);
+    } else {
+      const now = new Date();
+      const p = (n) => String(n).padStart(2, "0");
+      const fmt = (d) => `${d.getFullYear()}-${p(d.getMonth() + 1)}-${p(d.getDate())}T${p(d.getHours())}:${p(d.getMinutes())}`;
+      form.ngay_bat_dau.value = fmt(now);
+      form.ngay_ket_thuc.value = fmt(new Date(now.getTime() + 7 * 86400000));
+    }
+    capNhatTheoLoai();
+    moModal("modal-km");
+  }
+
+  form.addEventListener("submit", async (e) => {
+    e.preventDefault();
+    const err = $("km-error");
+    err.classList.add("hidden");
+    const id = form.id.value;
+    const body = {
+      ma_khuyen_mai: form.ma_khuyen_mai.value.trim(),
+      ten_khuyen_mai: form.ten_khuyen_mai.value.trim(),
+      loai_giam_gia: $("km-loai").value,
+      gia_tri_giam: form.gia_tri_giam.value,
+      don_hang_toi_thieu: form.don_hang_toi_thieu.value,
+      giam_toi_da: form.giam_toi_da.value,
+      so_luong_su_dung: form.so_luong_su_dung.value,
+      ngay_bat_dau: form.ngay_bat_dau.value,
+      ngay_ket_thuc: form.ngay_ket_thuc.value,
+    };
+    if (!body.ma_khuyen_mai || !body.ten_khuyen_mai) {
+      err.textContent = "Vui lòng nhập mã và tên chương trình.";
+      err.classList.remove("hidden");
+      return;
+    }
+    const btn = $("btn-save");
+    btn.disabled = true;
+    const r = id ? await apiGoi("PUT", `/api/v1/promotions/${id}`, body) : await apiGoi("POST", "/api/v1/promotions", body);
+    btn.disabled = false;
+    if (!r.ok) {
+      if (kiemTraHetPhien(r.status)) return;
+      err.textContent = r.loi;
+      err.classList.remove("hidden");
+      return;
+    }
+    dongModal("modal-km");
+    hienToast(id ? "Đã cập nhật chương trình." : "Đã tạo chương trình khuyến mãi.");
+    load();
+  });
+
+  async function batTat(id) {
+    const k = ds.find((x) => String(x.KhuyenMaiID) === id);
+    if (!k) return;
+    if (k.TrangThai && !(await xacNhan(`Tắt chương trình ${k.MaKhuyenMai}? Khách sẽ không dùng được mã này nữa.`,
+        {nhanDongY: "Tắt chương trình"}))) return;
+    const r = await apiGoi("PATCH", `/api/v1/promotions/${id}/status`, {trang_thai: !k.TrangThai});
+    if (!r.ok) { if (!kiemTraHetPhien(r.status)) hienToast(r.loi); return; }
+    hienToast(k.TrangThai ? "Đã tắt chương trình." : "Đã bật lại chương trình.");
+    load();
+  }
+
+  tbody.addEventListener("click", (e) => {
+    const b = e.target.closest("button");
+    if (!b) return;
+    if (b.dataset.xem) xemChiTiet(b.dataset.xem);
+    else if (b.dataset.sua) moForm(ds.find((x) => String(x.KhuyenMaiID) === b.dataset.sua));
+    else if (b.dataset.bat) batTat(b.dataset.bat);
+  });
+  $("pager").addEventListener("click", (e) => {
+    const b = e.target.closest("button[data-trang]");
+    if (b && !b.disabled) { trang = Number(b.dataset.trang); load(); }
+  });
+  let timer;
+  $("search-input").addEventListener("input", () => { clearTimeout(timer); timer = setTimeout(() => { trang = 1; load(); }, 300); });
+  $("filter-status").addEventListener("change", () => { trang = 1; load(); });
+  const btnAdd = $("btn-add");
+  if (btnAdd) btnAdd.addEventListener("click", () => moForm(null));
+
+  load();
+</script>
+{% endblock %}

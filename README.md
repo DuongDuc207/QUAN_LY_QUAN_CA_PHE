@@ -1,89 +1,125 @@
-# Website Quan Ly Quan Ca Phe - Sprint 1
+# Quản lý quán cà phê
 
-## Pham vi Sprint 1
-- Dang nhap, phan quyen, quan ly tai khoan (11 API - module `auth`)
-- Quan ly danh muc va thuc don (10 API - module `menu`)
-- 6 bang: VaiTro, Quyen, VaiTroQuyen, TaiKhoan, DanhMuc, Mon
+Ứng dụng quản lý hoạt động quán cà phê, gồm đăng nhập và phân quyền, thực đơn,
+bán hàng, kho, nhà cung cấp, khuyến mãi, báo cáo, nhân viên và lịch làm việc.
 
-## Cong nghe
-- Backend: Python 3.12 + Flask 3.x (to chuc theo Modules)
-- Database: SQL Server (`QuanLyCaPhe`)
-- Frontend: HTML + CSS + JS (Jinja2), prefix API `/api/v1`
+## Các phiên bản ứng dụng
 
-## Chay rieng Sprint 1
-Trong thu muc `sprint1`, chay `py app.py` (hoac tu thu muc cha: `py sprint1/app.py`).
-Lan dau tu tao `.venv` va cai `requirements.txt` (can ket noi mang).
-Cac lan sau tu dung lai moi truong nay; khong can activate hay cai thu vien vao Python chung.
-Moi sprint co day du ma nguon va thu vien rieng, co the sao chep thu muc de chay doc lap.
+Mỗi thư mục `sprint1` đến `sprint4` là một ứng dụng Flask độc lập, có môi trường
+Python, cấu hình và bộ kiểm thử riêng. Có thể chạy từng phiên bản mà không cần
+cài đặt hay khởi động phiên bản trước.
 
-Dia chi mac dinh: http://localhost:5001. Dat `PORT` trong `.env` de doi cong.
-Moi sprint doc dung `.env` canh `app.py`, ke ca khi chay tu thu muc khac.
-Bien moi truong da dat trong terminal duoc uu tien hon `.env`.
-Cau hinh SQL Server trong `.env` va nap schema theo huong dan duoi day neu chua co CSDL.
-Neu muon tach du lieu, moi sprint can `DB_NAME` va CSDL da khoi tao tuong ung.
+| Thư mục | Chức năng chính | Cổng mặc định |
+| --- | --- | --- |
+| `sprint1` | Đăng nhập, phân quyền, tài khoản, danh mục và thực đơn | 5001 |
+| `sprint2` | Đơn hàng, thanh toán và hóa đơn | 5002 |
+| `sprint3` | Kho, công thức pha chế, nhà cung cấp và nhập hàng | 5003 |
+| `sprint4` | Khuyến mãi, báo cáo, nhân viên, ca và lịch làm việc | 5004 |
 
-## Cai dat
-```bat
-cd sprint1
-if not exist .env copy .env.example .env
+`sprint4` là phiên bản đầy đủ tính năng nhất. README trong từng thư mục có hướng
+dẫn chi tiết cho ứng dụng tương ứng.
+
+## Công nghệ
+
+- Python 3.12
+- Flask 3.x, Jinja2, HTML, CSS và JavaScript
+- Microsoft SQL Server, `pyodbc` và Microsoft ODBC Driver for SQL Server
+- API có tiền tố `/api/v1`
+
+## Yêu cầu
+
+- Windows và Python 3.12 có lệnh `py`.
+- SQL Server đã khởi động, có thể kết nối từ máy chạy ứng dụng.
+- ODBC Driver tương ứng với cấu hình `DB_DRIVER`; cài `sqlcmd` nếu cần khởi tạo
+  cơ sở dữ liệu bằng các lệnh bên dưới.
+- Kết nối Internet ở lần chạy đầu để cài các gói Python vào môi trường riêng của
+  phiên bản đang chạy.
+
+## Cài đặt và chạy Sprint 4
+
+Từ thư mục gốc dự án, mở PowerShell:
+
+```powershell
+cd sprint4
+if (-not (Test-Path .env)) { Copy-Item .env.example .env }
+```
+
+Chỉnh `.env` theo SQL Server của bạn (`DB_SERVER`, `DB_NAME`, `DB_DRIVER`, và
+thông tin đăng nhập nếu không dùng Windows Authentication). Đặt
+`FLASK_SECRET_KEY` thành giá trị bí mật riêng trước khi triển khai.
+
+Nếu cần tạo cơ sở dữ liệu mới, chạy lần lượt các script sau trong thư mục `sprint4`:
+
+```powershell
 sqlcmd -S "localhost\SQL2022EXP" -E -d QuanLyCaPhe -i database\schema.sql -b
+sqlcmd -S "localhost\SQL2022EXP" -E -d QuanLyCaPhe -i database\schema_sprint2.sql -b -f 65001
+sqlcmd -S "localhost\SQL2022EXP" -E -d QuanLyCaPhe -i database\schema_sprint3.sql -b -f 65001
+sqlcmd -S "localhost\SQL2022EXP" -E -d QuanLyCaPhe -i database\update_01_promotions.sql -b -f 65001
+sqlcmd -S "localhost\SQL2022EXP" -E -d QuanLyCaPhe -i database\update_02_staff_schedule.sql -b -f 65001
 sqlcmd -S "localhost\SQL2022EXP" -E -d QuanLyCaPhe -i database\seed.sql -b -f 65001
 py tao_tai_khoan.py
 py app.py
 ```
 
-`seed.sql` chi nap vai tro + quyen, khong co tai khoan hay mon mau.
-Tai khoan dau tien tao bang terminal (chon vi tri 1 = Quan tri vien), sau do
-dang nhap web de them nhan vien, nhom mon va mon.
+`seed.sql` tạo các vai trò và quyền mặc định, không tạo tài khoản hay dữ liệu món
+mẫu. Tạo tài khoản quản trị đầu tiên bằng `py tao_tai_khoan.py`, sau đó mở
+<http://localhost:5004>. Ứng dụng tự tạo `.venv` và cài `requirements.txt` trong
+lần chạy đầu.
 
-```bat
-py tao_tai_khoan.py              :: tao tai khoan (hoi ho ten, email, vi tri, mat khau)
-py tao_tai_khoan.py --danh-sach  :: xem cac tai khoan hien co
+Để chạy phiên bản khác, vào thư mục tương ứng rồi dùng `py app.py`; xem README
+riêng của phiên bản đó để biết schema cần thiết. Đặt `PORT` trong `.env` để đổi
+cổng mặc định.
+
+## Cập nhật cơ sở dữ liệu
+
+Các script `schema.sql`, `schema_sprint2.sql` và `schema_sprint3.sql` là các phần
+schema nền hiện có. Phần khuyến mãi và nhân sự được cung cấp dưới dạng hai cập
+nhật tăng dần, không phụ thuộc tên sprint:
+
+1. `database\update_01_promotions.sql` tạo bảng khuyến mãi và lượt sử dụng.
+2. `database\update_02_staff_schedule.sql` tạo bảng nhân viên, ca làm việc và lịch
+   làm việc.
+
+Chạy hai cập nhật sau schema nền, theo đúng thứ tự ở trên. Chúng bỏ qua bảng đã
+tồn tại và không xóa dữ liệu. Sau khi cập nhật schema, chạy lại `seed.sql` để nạp
+quyền mới. Các script này được lưu đồng nhất trong thư mục `database` của cả
+`sprint3` và `sprint4`.
+
+## Kiểm thử
+
+Kiểm tra cơ chế khởi động độc lập của bốn phiên bản:
+
+```powershell
+py -m unittest discover -s tests -v
 ```
 
-CSDL da cai ban cu con du lieu mau thi chay 1 lan:
-`sqlcmd -S "localhost\SQL2022EXP" -E -d QuanLyCaPhe -i database\xoa_du_lieu_mau.sql -b -f 65001`
+Các bộ kiểm thử tích hợp nằm trong `sprintN\tests`. Cài dependencies phát triển
+vào môi trường của phiên bản cần kiểm thử rồi chạy:
 
-Mo trinh duyet: http://localhost:5001 (tu dong ve `/dashboard`, chua login thi ve `/login`).
-
-## Giao dien nguoi dung
-Ten hien thi voi khach hang: **Ca Phe Viet**. Giao dien phu du 21 API Sprint 1
-(`/auth/me` dung ngam de xac thuc phien, khong co nut rieng).
-
-| Trang | Chuc nang |
-|---|---|
-| `/login` | Dang nhap |
-| `/dashboard` | O so lieu (mon dang ban, nhom, nhan su) + loi tat |
-| `/accounts` | Nhan su: xem, tim, loc, them, chi tiet, sua, tam ngung/mo lai |
-| `/menu` tab Mon | Xem, tim, loc theo nhom, them, chi tiet, sua gia, ngung/ban lai |
-| `/menu` tab Nhom mon | Xem, them, sua, an/hien, xoa |
-| `/roles` | Phan quyen theo vi tri cong viec |
-
-Nguyen tac khi sua frontend:
-- Khong de lo thuat ngu ky thuat (ten bang/cot, endpoint API, ma trang thai, "Sprint").
-- Khong in truc tiep `data.message` tu API. Dung `apiGoi()` trong
-  `frontend/static/js/main.js` - no tu doi thong bao qua tieng Viet than thien
-  (bang `DIEN_GIAI_LOI`). Them tinh huong moi thi bo sung vao bang nay.
-- Ma trang thai he thong (`HOAT_DONG`/`KHOA`) chi nam trong `main.js`, khong viet
-  rai rac trong template.
-- Thuat ngu doi sang ngon ngu nguoi dung: tai khoan -> nhan su, vai tro -> vi tri,
-  danh muc -> nhom, quyen ky thuat -> cau viec lam duoc (bang `NHAN_QUYEN`).
-- Khong hien ID khoa chinh tren bang danh sach.
-- Muc menu/the/nut an theo quyen (`account.view`, `menu.manage`, `role.manage`...)
-  de nguoi dung khong gap loi tu choi truy cap.
-- Mau sac dat chuan tuong phan WCAG AA (toi thieu 4.5:1 cho chu thuong).
-
-## Nhanh lam viec (2 nguoi - 2 module API)
-- `sprint1/member1-auth` - Nguoi 1: module `api/auth/` (tai khoan, phan quyen)
-- `sprint1/member2-menu` - Nguoi 2: module `api/menu/` (danh muc, thuc don)
-
-## Chay kiem thu
-```bat
+```powershell
+cd sprint4
 .venv\Scripts\python.exe -m pip install -r requirements-dev.txt
-.venv\Scripts\python.exe -m pytest tests/ -v
+.venv\Scripts\python.exe -m pytest tests\ -v
 ```
-- Test tu tao tai khoan/mon rieng (`tests/du_lieu_test.py`, ten bat dau bang
-  `pytest`) va tu xoa khi xong - khong dung den du lieu that cua ban.
-- `tests/test_sprint1.py` - kiem thu 21 API (auth + menu)
-- `tests/test_giao_dien.py` - kiem thu giao dien: menu an theo quyen, khong lo
-  thuat ngu ky thuat, va giao dien phu du 21 API
+
+Kiểm thử tích hợp cần SQL Server và dữ liệu thử nghiệm. Không chạy kiểm thử trên
+cơ sở dữ liệu vận hành; xem README của phiên bản để cấu hình cơ sở dữ liệu thử
+nghiệm trước khi chạy.
+
+## Cấu trúc thư mục
+
+```text
+sprint1/ ... sprint4/   Ứng dụng, cấu hình, schema và tests độc lập
+tests/                  Kiểm thử dùng chung ở cấp dự án
+README.md               Hướng dẫn tổng quan
+AI_COLLABORATION.md     Lịch sử cộng tác và các quyết định trong phiên làm việc
+logbug.md               Nhật ký lỗi và vấn đề đã xác nhận
+status.md               Trạng thái công việc
+todos.md                Danh sách việc cần làm
+```
+
+## Cấu hình và dữ liệu nhạy cảm
+
+Không commit `.env`, mật khẩu, khóa ứng dụng, môi trường ảo, cache kiểm thử hay
+dữ liệu ID sinh tự động. Dùng `.env.example` làm mẫu và lưu giá trị bí mật trong
+môi trường triển khai phù hợp.

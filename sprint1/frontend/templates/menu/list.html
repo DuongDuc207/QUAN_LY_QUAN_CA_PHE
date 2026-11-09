@@ -1,0 +1,465 @@
+{% extends "layout.html" %}
+{% block title %}Thực đơn - Cà Phê Việt{% endblock %}
+{% block content %}
+{% set co_quan_ly = 'menu.manage' in (user.quyens or []) %}
+
+<div class="page-head">
+  <h2>Thực đơn</h2>
+  <p class="muted">Các món đang phục vụ, giá bán và tình trạng kinh doanh.</p>
+</div>
+
+<div class="tabs" role="tablist">
+  <button type="button" class="tab active" data-tab="mon" role="tab">Món</button>
+  <button type="button" class="tab" data-tab="nhom" role="tab">Nhóm món</button>
+</div>
+
+<!-- ===== Tab Mon ===== -->
+<section id="tab-mon">
+  <div class="toolbar">
+    <div class="search-box">
+      <span class="search-icon">🔍</span>
+      <input id="search-input" type="search" placeholder="Tìm món trong thực đơn...">
+    </div>
+    <select id="filter-group" class="filter-select" aria-label="Lọc theo nhóm">
+      <option value="">Tất cả nhóm</option>
+    </select>
+    {% if co_quan_ly %}
+      <button type="button" id="btn-add-mon">+ Thêm món</button>
+    {% endif %}
+  </div>
+
+  <div id="page-error" class="alert error hidden"></div>
+
+  <div class="table-wrap">
+    <table class="table" id="menu-table">
+      <thead>
+        <tr>
+          <th>Tên món</th>
+          <th>Nhóm</th>
+          <th class="col-num">Giá bán</th>
+          <th>Tình trạng</th>
+          <th class="col-actions">Thao tác</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr class="empty-row"><td colspan="5">Đang tải thực đơn...</td></tr>
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<!-- ===== Tab Nhom mon ===== -->
+<section id="tab-nhom" class="hidden">
+  <div class="toolbar">
+    <p class="muted" style="flex:1;margin:0;align-self:center">Nhóm giúp sắp xếp thực đơn theo loại thức uống.</p>
+    {% if co_quan_ly %}
+      <button type="button" id="btn-add-nhom">+ Thêm nhóm</button>
+    {% endif %}
+  </div>
+
+  <div id="group-error" class="alert error hidden"></div>
+
+  <div class="table-wrap">
+    <table class="table" id="group-table">
+      <thead>
+        <tr>
+          <th>Tên nhóm</th>
+          <th class="col-num">Số món</th>
+          <th>Hiển thị</th>
+          <th class="col-actions">Thao tác</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr class="empty-row"><td colspan="4">Đang tải...</td></tr>
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<!-- Hop thoai them / sua mon -->
+<div class="modal hidden" id="modal-mon" role="dialog" aria-modal="true" aria-labelledby="mon-title">
+  <div class="modal-card">
+    <div class="modal-head">
+      <h3 id="mon-title">Thêm món</h3>
+      <button type="button" class="modal-close" data-dong-modal="modal-mon" aria-label="Đóng">×</button>
+    </div>
+    <form id="mon-form" novalidate>
+      <div class="modal-body">
+        <div id="mon-error" class="alert error hidden"></div>
+        <input type="hidden" name="id">
+        <label>Tên món
+          <input type="text" name="ten_mon" required maxlength="100" placeholder="Cà phê sữa đá">
+        </label>
+        <div class="form-row">
+          <label>Nhóm
+            <select name="danh_muc_id" id="select-group" required></select>
+          </label>
+          <label>Giá bán (₫)
+            <input type="number" name="gia_ban" required min="0" step="1000" placeholder="30000">
+          </label>
+        </div>
+        <label>Mô tả
+          <textarea name="mo_ta" rows="3" maxlength="255" placeholder="Mô tả ngắn hiển thị cho khách"></textarea>
+        </label>
+      </div>
+      <div class="modal-foot">
+        <button type="button" class="btn-outline" data-dong-modal="modal-mon">Huỷ</button>
+        <button type="submit" id="btn-save-mon">Lưu</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- Hop thoai them / sua nhom -->
+<div class="modal hidden" id="modal-nhom" role="dialog" aria-modal="true" aria-labelledby="nhom-title">
+  <div class="modal-card">
+    <div class="modal-head">
+      <h3 id="nhom-title">Thêm nhóm</h3>
+      <button type="button" class="modal-close" data-dong-modal="modal-nhom" aria-label="Đóng">×</button>
+    </div>
+    <form id="nhom-form" novalidate>
+      <div class="modal-body">
+        <div id="nhom-error" class="alert error hidden"></div>
+        <input type="hidden" name="id">
+        <label>Tên nhóm
+          <input type="text" name="ten_danh_muc" required maxlength="100" placeholder="Cà phê">
+        </label>
+        <label>Mô tả
+          <textarea name="mo_ta" rows="2" maxlength="255" placeholder="Mô tả ngắn về nhóm"></textarea>
+        </label>
+        <label class="perm-item" id="nhom-hien-thi-wrap" style="padding-left:0">
+          <input type="checkbox" name="trang_thai" checked>
+          Hiển thị nhóm này trong thực đơn
+        </label>
+      </div>
+      <div class="modal-foot">
+        <button type="button" class="btn-outline" data-dong-modal="modal-nhom">Huỷ</button>
+        <button type="submit" id="btn-save-nhom">Lưu</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- Hop thoai chi tiet mon -->
+<div class="modal hidden" id="modal-detail" role="dialog" aria-modal="true" aria-labelledby="detail-title">
+  <div class="modal-card">
+    <div class="modal-head">
+      <h3 id="detail-title">Thông tin món</h3>
+      <button type="button" class="modal-close" data-dong-modal="modal-detail" aria-label="Đóng">×</button>
+    </div>
+    <div class="modal-body">
+      <dl class="detail-list" id="detail-body"></dl>
+    </div>
+    <div class="modal-foot">
+      <button type="button" class="btn-outline" data-dong-modal="modal-detail">Đóng</button>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+  const CO_QUAN_LY = {{ 'true' if co_quan_ly else 'false' }};
+
+  const tbodyMon = document.querySelector("#menu-table tbody");
+  const tbodyNhom = document.querySelector("#group-table tbody");
+  const pageError = document.getElementById("page-error");
+  const groupError = document.getElementById("group-error");
+  const monForm = document.getElementById("mon-form");
+  const nhomForm = document.getElementById("nhom-form");
+  const monError = document.getElementById("mon-error");
+  const nhomError = document.getElementById("nhom-error");
+  let nhomList = [];
+
+  /* ===== Tabs ===== */
+  document.querySelectorAll(".tab").forEach((t) => {
+    t.addEventListener("click", () => {
+      document.querySelectorAll(".tab").forEach((x) => x.classList.remove("active"));
+      t.classList.add("active");
+      const la = t.dataset.tab;
+      document.getElementById("tab-mon").classList.toggle("hidden", la !== "mon");
+      document.getElementById("tab-nhom").classList.toggle("hidden", la !== "nhom");
+      if (la === "nhom") loadNhom();
+    });
+  });
+
+  /* ===== Mon ===== */
+  function showEmptyMon(text) {
+    tbodyMon.innerHTML = `<tr class="empty-row"><td colspan="5">${escapeHtml(text)}</td></tr>`;
+  }
+
+  function renderMon(rows) {
+    if (!rows.length) {
+      showEmptyMon("Không tìm thấy món nào phù hợp.");
+      return;
+    }
+    tbodyMon.innerHTML = rows.map((m) => {
+      const dangBan = Boolean(m.TrangThai);
+      const desc = m.MoTa ? `<div class="cell-sub">${escapeHtml(m.MoTa)}</div>` : "";
+      const nut = CO_QUAN_LY ? `
+        <button type="button" class="btn-icon" data-sua="${m.MonID}">Sửa</button>
+        <button type="button" class="btn-icon ${dangBan ? "danger" : ""}" data-ban="${m.MonID}" data-dang-ban="${dangBan}">${dangBan ? "Ngừng bán" : "Bán lại"}</button>` : "";
+      return `<tr>
+        <td><div class="cell-name">${escapeHtml(m.TenMon)}</div>${desc}</td>
+        <td>${escapeHtml(m.TenDanhMuc || "Chưa phân nhóm")}</td>
+        <td class="col-num">${dinhDangGia(m.GiaBan)}</td>
+        <td><span class="badge ${dangBan ? "badge-on" : "badge-off"}">${dangBan ? "Đang bán" : "Tạm hết"}</span></td>
+        <td class="col-actions"><div class="row-actions">
+          <button type="button" class="btn-icon" data-xem="${m.MonID}">Chi tiết</button>
+          ${nut}
+        </div></td>
+      </tr>`;
+    }).join("");
+  }
+
+  async function loadMon() {
+    pageError.classList.add("hidden");
+    const q = document.getElementById("search-input").value.trim();
+    const nhom = document.getElementById("filter-group").value;
+    let url;
+    if (q) {
+      url = `/api/v1/menu/search?q=${encodeURIComponent(q)}`;
+    } else {
+      const p = new URLSearchParams({per_page: "100"});
+      if (nhom) p.set("danh_muc_id", nhom);
+      url = "/api/v1/menu?" + p.toString();
+    }
+    const r = await apiGoi("GET", url);
+    if (!r.ok) {
+      if (kiemTraHetPhien(r.status)) return;
+      pageError.textContent = thongBaoLoi(r.status, "thực đơn");
+      pageError.classList.remove("hidden");
+      showEmptyMon("Không có dữ liệu để hiển thị.");
+      return;
+    }
+    let rows = r.data.items || r.data;
+    // Tim kiem khong loc theo nhom o he thong nen loc tai day cho dung voi lua chon.
+    if (q && nhom) rows = rows.filter((m) => String(m.DanhMucID) === String(nhom));
+    renderMon(rows);
+  }
+
+  function moFormMon(mon) {
+    monForm.reset();
+    monError.classList.add("hidden");
+    if (mon) {
+      monForm.id.value = mon.MonID;
+      monForm.ten_mon.value = mon.TenMon || "";
+      monForm.danh_muc_id.value = mon.DanhMucID || "";
+      monForm.gia_ban.value = Number(mon.GiaBan);
+      monForm.mo_ta.value = mon.MoTa || "";
+      document.getElementById("mon-title").textContent = "Sửa thông tin món";
+    } else {
+      monForm.id.value = "";
+      document.getElementById("mon-title").textContent = "Thêm món";
+    }
+    moModal("modal-mon");
+  }
+
+  monForm.addEventListener("submit", async (e) => {
+    e.preventDefault();
+    monError.classList.add("hidden");
+    const id = monForm.id.value;
+    const ten = monForm.ten_mon.value.trim();
+    const gia = monForm.gia_ban.value;
+    if (!ten) { monError.textContent = "Vui lòng nhập tên món."; monError.classList.remove("hidden"); return; }
+    if (gia === "" || Number(gia) < 0) { monError.textContent = "Vui lòng nhập giá bán hợp lệ."; monError.classList.remove("hidden"); return; }
+
+    const body = {
+      ten_mon: ten,
+      danh_muc_id: Number(monForm.danh_muc_id.value),
+      gia_ban: Number(gia),
+      mo_ta: monForm.mo_ta.value.trim(),
+    };
+    const btn = document.getElementById("btn-save-mon");
+    btn.disabled = true;
+    const r = id
+      ? await apiGoi("PUT", `/api/v1/menu/${id}`, body)
+      : await apiGoi("POST", "/api/v1/menu", body);
+    btn.disabled = false;
+
+    if (!r.ok) {
+      if (kiemTraHetPhien(r.status)) return;
+      monError.textContent = r.loi;
+      monError.classList.remove("hidden");
+      return;
+    }
+    dongModal("modal-mon");
+    hienToast(id ? "Đã cập nhật món." : "Đã thêm món mới.");
+    loadMon();
+  });
+
+  async function xemChiTietMon(id) {
+    const r = await apiGoi("GET", `/api/v1/menu/${id}`);
+    if (!r.ok) { hienToast(r.loi); return; }
+    const m = r.data;
+    const dangBan = Boolean(m.TrangThai);
+    document.getElementById("detail-body").innerHTML = `
+      <div class="detail-row"><dt>Tên món</dt><dd>${escapeHtml(m.TenMon)}</dd></div>
+      <div class="detail-row"><dt>Nhóm</dt><dd>${escapeHtml(m.TenDanhMuc || "Chưa phân nhóm")}</dd></div>
+      <div class="detail-row"><dt>Giá bán</dt><dd>${dinhDangGia(m.GiaBan)}</dd></div>
+      <div class="detail-row"><dt>Tình trạng</dt><dd><span class="badge ${dangBan ? "badge-on" : "badge-off"}">${dangBan ? "Đang bán" : "Tạm hết"}</span></dd></div>
+      <div class="detail-row"><dt>Mô tả</dt><dd>${escapeHtml(m.MoTa || "Chưa có")}</dd></div>`;
+    moModal("modal-detail");
+  }
+
+  async function doiTinhTrangMon(id, dangBan) {
+    const r = await apiGoi("PATCH", `/api/v1/menu/${id}/status`, {dang_ban: !dangBan});
+    if (!r.ok) {
+      if (kiemTraHetPhien(r.status)) return;
+      hienToast(r.loi);
+      return;
+    }
+    hienToast(dangBan ? "Đã ngừng bán món này." : "Đã mở bán lại món này.");
+    loadMon();
+  }
+
+  tbodyMon.addEventListener("click", async (e) => {
+    const b = e.target.closest("button");
+    if (!b) return;
+    if (b.dataset.xem) xemChiTietMon(b.dataset.xem);
+    else if (b.dataset.ban) doiTinhTrangMon(b.dataset.ban, b.dataset.dangBan === "true");
+    else if (b.dataset.sua) {
+      const r = await apiGoi("GET", `/api/v1/menu/${b.dataset.sua}`);
+      if (!r.ok) { hienToast(r.loi); return; }
+      moFormMon(r.data);
+    }
+  });
+
+  /* ===== Nhom mon ===== */
+  function renderNhom(rows) {
+    if (!rows.length) {
+      tbodyNhom.innerHTML = `<tr class="empty-row"><td colspan="4">Chưa có nhóm nào.</td></tr>`;
+      return;
+    }
+    tbodyNhom.innerHTML = rows.map((d) => {
+      const hien = Boolean(d.TrangThai);
+      const soMon = Number(d.SoMon || 0);
+      const nut = CO_QUAN_LY ? `
+        <button type="button" class="btn-icon" data-sua="${d.DanhMucID}">Sửa</button>
+        <button type="button" class="btn-icon danger" data-xoa="${d.DanhMucID}" data-so-mon="${soMon}" data-ten="${escapeHtml(d.TenDanhMuc)}">Xoá</button>` : "";
+      const desc = d.MoTa ? `<div class="cell-sub">${escapeHtml(d.MoTa)}</div>` : "";
+      return `<tr>
+        <td><div class="cell-name">${escapeHtml(d.TenDanhMuc)}</div>${desc}</td>
+        <td class="col-num">${soMon.toLocaleString("vi-VN")}</td>
+        <td><span class="badge ${hien ? "badge-on" : "badge-off"}">${hien ? "Đang hiển thị" : "Đang ẩn"}</span></td>
+        <td class="col-actions"><div class="row-actions">${nut}</div></td>
+      </tr>`;
+    }).join("");
+  }
+
+  async function loadNhom() {
+    groupError.classList.add("hidden");
+    // all=1 de thay ca nhom dang an (phuc vu quan ly).
+    const r = await apiGoi("GET", "/api/v1/categories?all=1");
+    if (!r.ok) {
+      if (kiemTraHetPhien(r.status)) return;
+      groupError.textContent = thongBaoLoi(r.status, "danh sách nhóm");
+      groupError.classList.remove("hidden");
+      return;
+    }
+    nhomList = r.data;
+    renderNhom(nhomList);
+    capNhatLuaChonNhom();
+  }
+
+  function capNhatLuaChonNhom() {
+    const opts = nhomList.map((d) => `<option value="${d.DanhMucID}">${escapeHtml(d.TenDanhMuc)}</option>`).join("");
+    document.getElementById("select-group").innerHTML = opts;
+    const filter = document.getElementById("filter-group");
+    const cur = filter.value;
+    filter.innerHTML = `<option value="">Tất cả nhóm</option>` + opts;
+    filter.value = cur;
+  }
+
+  function moFormNhom(nhom) {
+    nhomForm.reset();
+    nhomError.classList.add("hidden");
+    const wrap = document.getElementById("nhom-hien-thi-wrap");
+    if (nhom) {
+      nhomForm.id.value = nhom.DanhMucID;
+      nhomForm.ten_danh_muc.value = nhom.TenDanhMuc || "";
+      nhomForm.mo_ta.value = nhom.MoTa || "";
+      nhomForm.trang_thai.checked = Boolean(nhom.TrangThai);
+      wrap.classList.remove("hidden");
+      document.getElementById("nhom-title").textContent = "Sửa nhóm";
+    } else {
+      nhomForm.id.value = "";
+      wrap.classList.add("hidden");  // nhom moi mac dinh hien thi
+      document.getElementById("nhom-title").textContent = "Thêm nhóm";
+    }
+    moModal("modal-nhom");
+  }
+
+  nhomForm.addEventListener("submit", async (e) => {
+    e.preventDefault();
+    nhomError.classList.add("hidden");
+    const id = nhomForm.id.value;
+    const ten = nhomForm.ten_danh_muc.value.trim();
+    if (!ten) { nhomError.textContent = "Vui lòng nhập tên nhóm."; nhomError.classList.remove("hidden"); return; }
+
+    const body = {ten_danh_muc: ten, mo_ta: nhomForm.mo_ta.value.trim()};
+    if (id) body.trang_thai = nhomForm.trang_thai.checked;
+
+    const btn = document.getElementById("btn-save-nhom");
+    btn.disabled = true;
+    const r = id
+      ? await apiGoi("PUT", `/api/v1/categories/${id}`, body)
+      : await apiGoi("POST", "/api/v1/categories", body);
+    btn.disabled = false;
+
+    if (!r.ok) {
+      if (kiemTraHetPhien(r.status)) return;
+      nhomError.textContent = r.loi;
+      nhomError.classList.remove("hidden");
+      return;
+    }
+    dongModal("modal-nhom");
+    hienToast(id ? "Đã cập nhật nhóm." : "Đã thêm nhóm mới.");
+    loadNhom();
+    loadMon();
+  });
+
+  async function xoaNhom(id, ten, soMon) {
+    if (soMon > 0) {
+      hienToast(`Nhóm "${ten}" đang có ${soMon} món nên không xoá được. Hãy chuyển món sang nhóm khác trước.`);
+      return;
+    }
+    if (!xacNhan(`Xoá nhóm "${ten}"? Việc này không thể hoàn tác.`)) return;
+    const r = await apiGoi("DELETE", `/api/v1/categories/${id}`);
+    if (!r.ok) {
+      if (kiemTraHetPhien(r.status)) return;
+      hienToast(r.loi);
+      return;
+    }
+    hienToast("Đã xoá nhóm.");
+    loadNhom();
+  }
+
+  tbodyNhom.addEventListener("click", (e) => {
+    const b = e.target.closest("button");
+    if (!b) return;
+    if (b.dataset.sua) {
+      const nhom = nhomList.find((d) => String(d.DanhMucID) === b.dataset.sua);
+      if (nhom) moFormNhom(nhom);
+    } else if (b.dataset.xoa) {
+      xoaNhom(b.dataset.xoa, b.dataset.ten, Number(b.dataset.soMon));
+    }
+  });
+
+  /* ===== Su kien chung ===== */
+  const btnAddMon = document.getElementById("btn-add-mon");
+  if (btnAddMon) btnAddMon.addEventListener("click", () => moFormMon(null));
+  const btnAddNhom = document.getElementById("btn-add-nhom");
+  if (btnAddNhom) btnAddNhom.addEventListener("click", () => moFormNhom(null));
+
+  let timer;
+  document.getElementById("search-input").addEventListener("input", () => {
+    clearTimeout(timer);
+    timer = setTimeout(loadMon, 300);
+  });
+  document.getElementById("filter-group").addEventListener("change", loadMon);
+
+  loadNhom();
+  loadMon();
+</script>
+{% endblock %}

@@ -1,0 +1,95 @@
+{% extends "layout.html" %}
+{% block title %}Trang chủ - Cà Phê Việt{% endblock %}
+{% block content %}
+<div class="page-head">
+  <h2>Xin chào{% if user and user.ho_ten %}, {{ user.ho_ten }}{% endif %}</h2>
+  <p class="muted">Tổng quan hoạt động của quán hôm nay.</p>
+</div>
+
+<div class="stat-row" id="stat-row">
+  <div class="stat-tile" id="tile-menu">
+    <span class="stat-label">Món đang bán</span>
+    <span class="stat-value" data-value>–</span>
+    <span class="stat-foot">trên tổng <span data-total>–</span> món trong thực đơn</span>
+  </div>
+  <div class="stat-tile" id="tile-categories">
+    <span class="stat-label">Nhóm thực đơn</span>
+    <span class="stat-value" data-value>–</span>
+    <span class="stat-foot">đang hiển thị với khách</span>
+  </div>
+  <div class="stat-tile hidden" id="tile-staff">
+    <span class="stat-label">Nhân sự đang làm việc</span>
+    <span class="stat-value" data-value>–</span>
+    <span class="stat-foot">trên tổng <span data-total>–</span> người</span>
+  </div>
+</div>
+
+<h3 class="section-title">Lối tắt</h3>
+<div class="cards">
+  <div class="card">
+    <span class="card-icon">📋</span>
+    <h3>Thực đơn</h3>
+    <p>Quản lý nhóm món, giá bán và tình trạng kinh doanh của từng món.</p>
+    <a class="btn btn-self" href="/menu">Mở thực đơn</a>
+  </div>
+  {% if user and 'account.view' in (user.quyens or []) %}
+  <div class="card">
+    <span class="card-icon">👥</span>
+    <h3>Nhân sự</h3>
+    <p>Danh sách nhân viên, vị trí công việc và quyền truy cập hệ thống.</p>
+    <a class="btn btn-self" href="/accounts">Mở nhân sự</a>
+  </div>
+  {% endif %}
+  {% if user and 'role.manage' in (user.quyens or []) %}
+  <div class="card">
+    <span class="card-icon">🔑</span>
+    <h3>Phân quyền</h3>
+    <p>Thiết lập những việc mà từng vị trí công việc được phép làm.</p>
+    <a class="btn btn-self" href="/roles">Mở phân quyền</a>
+  </div>
+  {% endif %}
+</div>
+{% endblock %}
+{% block scripts %}
+<script>
+  function setTile(id, value, total) {
+    const tile = document.getElementById(id);
+    if (!tile) return;
+    tile.classList.remove("hidden");
+    tile.querySelector("[data-value]").textContent = value.toLocaleString("vi-VN");
+    const totalEl = tile.querySelector("[data-total]");
+    if (totalEl) totalEl.textContent = total.toLocaleString("vi-VN");
+  }
+
+  async function load(url) {
+    try {
+      const res = await fetch(url);
+      const data = await res.json();
+      // Thieu quyen thi chi an o so lieu, khong bao loi cho nguoi dung.
+      if (!res.ok || !data.success) {
+        kiemTraHetPhien(res.status);
+        return null;
+      }
+      return data.data;
+    } catch (e) {
+      return null;
+    }
+  }
+
+  (async () => {
+    const menu = await load("/api/v1/menu?per_page=100");
+    if (menu) {
+      const items = menu.items || menu;
+      setTile("tile-menu", items.filter((m) => m.TrangThai).length, menu.total || items.length);
+    }
+
+    const cats = await load("/api/v1/categories");
+    if (cats) setTile("tile-categories", cats.length);
+
+    const staff = await load("/api/v1/accounts");
+    if (staff) {
+      setTile("tile-staff", staff.filter(dangLamViec).length, staff.length);
+    }
+  })();
+</script>
+{% endblock %}

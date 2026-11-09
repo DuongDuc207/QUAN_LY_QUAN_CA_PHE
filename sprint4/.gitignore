@@ -1,0 +1,6 @@
+__pycache__/
+*.pyc
+.venv/
+.env
+du_lieu_mau_ids.json
+du_lieu_mau_ids.json.cu

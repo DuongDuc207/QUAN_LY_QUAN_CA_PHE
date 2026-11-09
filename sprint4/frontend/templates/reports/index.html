@@ -1,0 +1,217 @@
+{% extends "layout.html" %}
+{% block title %}Báo cáo - Cà Phê Việt{% endblock %}
+{% block head %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/sprint4.css', v=1) }}">
+{% endblock %}
+{% block content %}
+<div class="page-head pos-head">
+  <div>
+    <h2>Báo cáo kinh doanh</h2>
+    <p class="muted">Doanh thu, đơn hàng, món bán chạy, kho, nhập hàng và khuyến mãi theo khoảng ngày.</p>
+  </div>
+</div>
+
+<div class="toolbar bc-loc">
+  <label class="kho-loc-ngay">Từ ngày <input type="date" id="tu-ngay" class="filter-select"></label>
+  <label class="kho-loc-ngay">Đến ngày <input type="date" id="den-ngay" class="filter-select"></label>
+  <div class="chip-filter" id="nhanh" role="group" aria-label="Chọn nhanh khoảng ngày">
+    <button type="button" class="chip" data-ngay="0">Hôm nay</button>
+    <button type="button" class="chip" data-ngay="6">7 ngày</button>
+    <button type="button" class="chip" data-ngay="29">30 ngày</button>
+  </div>
+</div>
+
+<div class="tabs" role="tablist">
+  <button type="button" class="tab active" data-tab="tong-quan" role="tab">Tổng quan</button>
+  <button type="button" class="tab" data-tab="doanh-thu" role="tab">Doanh thu</button>
+  <button type="button" class="tab" data-tab="don-hang" role="tab">Đơn hàng</button>
+  <button type="button" class="tab" data-tab="ban-chay" role="tab">Món bán chạy</button>
+  <button type="button" class="tab" data-tab="thu-tien" role="tab">Thu tiền</button>
+  <button type="button" class="tab" data-tab="huy-hoan" role="tab">Huỷ và hoàn tiền</button>
+  <button type="button" class="tab" data-tab="kho" role="tab">Kho</button>
+  <button type="button" class="tab" data-tab="nhap-hang" role="tab">Nhập hàng</button>
+  <button type="button" class="tab" data-tab="khuyen-mai" role="tab">Khuyến mãi</button>
+</div>
+
+<div id="page-error" class="alert error hidden" role="alert"></div>
+<section id="noi-dung" aria-live="polite"><p class="muted">Đang tải...</p></section>
+{% endblock %}
+
+{% block scripts %}
+<script>
+  const $ = (id) => document.getElementById(id);
+  const vung = $("noi-dung");
+  let tab = "tong-quan";
+
+  const so = (v) => Number(v || 0).toLocaleString("vi-VN");
+  const o = (nhan, giaTri, chu) => `<div class="stat-tile"><span class="stat-label">${nhan}</span>
+    <span class="stat-value bc-so">${giaTri}</span>${chu ? `<span class="stat-foot">${chu}</span>` : ""}</div>`;
+  const ngayVN = (v) => (v ? new Date(v + (String(v).length === 10 ? "T00:00:00" : "")).toLocaleDateString("vi-VN") : "—");
+  const thangVN = (v) => { const d = new Date(v + "T00:00:00"); return `Tháng ${d.getMonth() + 1}/${d.getFullYear()}`; };
+  const bang = (dau, dong, trong) => dong.length
+    ? `<div class="table-wrap"><table class="table"><thead><tr>${dau.map((h) =>
+        `<th${h.so ? ' class="col-num"' : ""}>${h.t}</th>`).join("")}</tr></thead><tbody>${dong.join("")}</tbody></table></div>`
+    : `<p class="muted">${trong}</p>`;
+  const td = (v, laSo) => `<td${laSo ? ' class="col-num"' : ""}>${v}</td>`;
+
+  const VE = {
+    "tong-quan": (d) => `
+      <div class="stat-row">
+        ${o("Doanh thu thuần", dinhDangGia(d.DoanhThuThuan), `đã thu ${dinhDangGia(d.DoanhThu)}, hoàn ${dinhDangGia(d.TienHoan)}`)}
+        ${o("Đơn đã thu tiền", so(d.SoDonDaThu), `trung bình ${dinhDangGia(d.GiaTriTrungBinhDon)} / đơn`)}
+        ${o("Đơn huỷ", so(d.SoDonHuy), `trên tổng ${so(d.TongDon)} đơn`)}
+        ${o("Chi phí nhập hàng", dinhDangGia(d.ChiPhiNhapHang), `${so(d.NguyenLieuCanNhap)} nguyên liệu cần nhập thêm`)}
+      </div>
+      <h3 class="section-title">Món bán chạy</h3>
+      ${bang([{t: "Món"}, {t: "Số ly", so: 1}, {t: "Doanh thu", so: 1}],
+        d.MonBanChay.map((m) => `<tr>${td(escapeHtml(m.TenMon))}${td(so(m.SoLuong), 1)}${td(dinhDangGia(m.DoanhThu), 1)}</tr>`),
+        "Chưa bán được món nào trong khoảng này.")}`,
+
+    "doanh-thu": (d) => `
+      <div class="stat-row">
+        ${o("Đã thu", dinhDangGia(d.TongQuan.DoanhThu))}
+        ${o("Đã hoàn cho khách", dinhDangGia(d.TongQuan.TienHoan), `${so(d.TongQuan.SoLanHoan)} lần hoàn`)}
+        ${o("Doanh thu thuần", dinhDangGia(d.TongQuan.DoanhThuThuan))}
+        ${o("Đã giảm cho khách", dinhDangGia(d.TongQuan.TongGiamGia), "qua khuyến mãi")}
+      </div>
+      ${bang([{t: d.Nhom === "month" ? "Tháng" : "Ngày"}, {t: "Số đơn", so: 1}, {t: "Đã thu", so: 1}, {t: "Hoàn", so: 1}, {t: "Thuần", so: 1}],
+        d.TheoKy.map((k) => `<tr>${td(d.Nhom === "month" ? thangVN(k.Ky) : ngayVN(k.Ky))}${td(so(k.SoDon), 1)}
+          ${td(dinhDangGia(k.DoanhThu), 1)}${td(dinhDangGia(k.TienHoan), 1)}${td(`<strong>${dinhDangGia(k.DoanhThuThuan)}</strong>`, 1)}</tr>`),
+        "Không có dữ liệu.")}`,
+
+    "don-hang": (d) => `
+      <div class="stat-row">
+        ${o("Tổng đơn", so(d.TongQuan.TongDon))}
+        ${o("Đơn không huỷ", so(d.TongQuan.SoDonKhongHuy))}
+        ${o("Đơn huỷ", so(d.TongQuan.SoDonHuy), `tỉ lệ ${String(d.TongQuan.TiLeHuy).replace(".", ",")}%`)}
+      </div>
+      <div class="bc-hai-cot">
+        <div><h3 class="section-title">Theo tình trạng</h3>
+          ${bang([{t: "Tình trạng"}, {t: "Số đơn", so: 1}, {t: "Giá trị", so: 1}],
+            d.TheoTrangThai.map((r) => `<tr>${td(huyHieuDon(r.TrangThai))}${td(so(r.SoDon), 1)}${td(dinhDangGia(r.GiaTri), 1)}</tr>`),
+            "Chưa có đơn nào.")}</div>
+        <div><h3 class="section-title">Giờ đông khách</h3>
+          ${bang([{t: "Khung giờ"}, {t: "Số đơn", so: 1}],
+            d.TheoGio.map((r) => `<tr>${td(`${String(r.Gio).padStart(2, "0")}:00 – ${String(r.Gio + 1).padStart(2, "0")}:00`)}${td(so(r.SoDon), 1)}</tr>`),
+            "Chưa có đơn nào.")}</div>
+      </div>`,
+
+    "ban-chay": (d) => bang([{t: "#"}, {t: "Món"}, {t: "Số ly", so: 1}, {t: "Số đơn", so: 1}, {t: "Doanh thu", so: 1}],
+      d.items.map((m, i) => `<tr>${td(i + 1)}${td(escapeHtml(m.TenMon))}${td(so(m.SoLuong), 1)}${td(so(m.SoDon), 1)}${td(dinhDangGia(m.DoanhThu), 1)}</tr>`),
+      "Chưa bán được món nào trong khoảng này."),
+
+    "thu-tien": (d) => bang([{t: "Hình thức"}, {t: "Số lần thu", so: 1}, {t: "Thành công", so: 1}, {t: "Tiền đã thu", so: 1}],
+      d.TheoPhuongThuc.map((p) => `<tr>${td(escapeHtml(nhanHinhThuc(p.PhuongThuc)))}${td(so(p.SoGiaoDich), 1)}${td(so(p.SoDaThu), 1)}${td(dinhDangGia(p.TienDaThu), 1)}</tr>`),
+      "Chưa có lần thu tiền nào."),
+
+    "huy-hoan": (d) => `
+      <div class="stat-row">
+        ${o("Đơn huỷ", so(d.HuyDon.SoDonHuy), `giá trị ${dinhDangGia(d.HuyDon.GiaTriDonHuy)}`)}
+        ${o("Đã hoàn tiền", dinhDangGia(d.HoanTien.TienHoan), `${so(d.HoanTien.SoLanHoan)} lần`)}
+      </div>
+      <div class="bc-hai-cot">
+        <div><h3 class="section-title">Lý do huỷ thường gặp</h3>
+          ${bang([{t: "Lý do"}, {t: "Số đơn", so: 1}],
+            d.LyDoHuy.map((r) => `<tr>${td(escapeHtml(r.LyDoHuy || "Không ghi"))}${td(so(r.SoDon), 1)}</tr>`), "Không có đơn huỷ.")}</div>
+        <div><h3 class="section-title">Các lần hoàn tiền</h3>
+          ${bang([{t: "Đơn"}, {t: "Lý do"}, {t: "Số tiền", so: 1}],
+            d.DanhSachHoan.map((h) => `<tr>${td(`${escapeHtml(h.MaDonHang)}<div class="cell-sub">${dinhDangThoiGian(h.NgayHoanTien)}</div>`)}
+              ${td(escapeHtml(h.LyDo))}${td(dinhDangGia(h.SoTienHoan), 1)}</tr>`), "Chưa hoàn tiền lần nào.")}</div>
+      </div>`,
+
+    "kho": (d) => `
+      <div class="stat-row">
+        ${o("Nguyên liệu đang dùng", so(d.TongQuan.SoNguyenLieu))}
+        ${o("Hết hàng", so(d.TongQuan.SoHet))}
+        ${o("Sắp hết", so(d.TongQuan.SoSapHet))}
+      </div>
+      ${bang([{t: "Nguyên liệu"}, {t: "Tồn hiện tại", so: 1}, {t: "Nhập trong kỳ", so: 1}, {t: "Dùng / xuất trong kỳ", so: 1}],
+        d.items.map((n) => `<tr>${td(escapeHtml(n.TenNguyenLieu))}${td(dinhDangSoLuong(n.SoLuongTon, n.DonViTinh), 1)}
+          ${td(dinhDangSoLuong(n.TongNhap, n.DonViTinh), 1)}${td(dinhDangSoLuong(n.TongXuat, n.DonViTinh), 1)}</tr>`),
+        "Chưa có nguyên liệu nào.")}`,
+
+    "nhap-hang": (d) => `
+      <div class="stat-row">
+        ${o("Chi phí nhập hàng", dinhDangGia(d.TongQuan.TongChiPhi), `${so(d.TongQuan.SoPhieu)} phiếu đã nhận hàng`)}
+      </div>
+      <div class="bc-hai-cot">
+        <div><h3 class="section-title">Theo nhà cung cấp</h3>
+          ${bang([{t: "Nhà cung cấp"}, {t: "Số phiếu", so: 1}, {t: "Chi phí", so: 1}],
+            d.TheoNhaCungCap.map((n) => `<tr>${td(escapeHtml(n.TenNhaCungCap))}${td(so(n.SoPhieu), 1)}${td(dinhDangGia(n.TongChiPhi), 1)}</tr>`),
+            "Chưa nhận phiếu nhập nào.")}</div>
+        <div><h3 class="section-title">Nguyên liệu tốn nhiều nhất</h3>
+          ${bang([{t: "Nguyên liệu"}, {t: "Số lượng", so: 1}, {t: "Chi phí", so: 1}],
+            d.TheoNguyenLieu.map((n) => `<tr>${td(escapeHtml(n.TenNguyenLieu))}${td(dinhDangSoLuong(n.SoLuong, n.DonViTinh), 1)}${td(dinhDangGia(n.ChiPhi), 1)}</tr>`),
+            "Chưa nhận phiếu nhập nào.")}</div>
+      </div>`,
+
+    "khuyen-mai": (d) => `
+      <div class="stat-row">
+        ${o("Đơn dùng mã", so(d.TongQuan.SoDonDungKhuyenMai), `${String(d.TongQuan.TiLeDung).replace(".", ",")}% trên ${so(d.TongQuan.TongDon)} đơn`)}
+        ${o("Đã giảm cho khách", dinhDangGia(d.TongQuan.TongGiam))}
+      </div>
+      ${bang([{t: "Chương trình"}, {t: "Lượt dùng", so: 1}, {t: "Đã giảm", so: 1}, {t: "Doanh thu sau giảm", so: 1}],
+        d.items.map((k) => `<tr>${td(`<span class="km-ma">${escapeHtml(k.MaKhuyenMai)}</span><div class="cell-sub">${escapeHtml(k.TenKhuyenMai)}</div>`)}
+          ${td(so(k.SoLuot), 1)}${td(dinhDangGia(k.TongGiam), 1)}${td(dinhDangGia(k.TongSauGiam), 1)}</tr>`),
+        "Chưa có đơn nào dùng mã khuyến mãi.")}`,
+  };
+
+  const DUONG = {
+    "tong-quan": "/api/v1/reports/overview",
+    "doanh-thu": "/api/v1/reports/revenue",
+    "don-hang": "/api/v1/reports/orders",
+    "ban-chay": "/api/v1/reports/top-products",
+    "thu-tien": "/api/v1/reports/payments",
+    "huy-hoan": "/api/v1/reports/refunds",
+    "kho": "/api/v1/reports/inventory",
+    "nhap-hang": "/api/v1/reports/purchases",
+    "khuyen-mai": "/api/v1/reports/promotions",
+  };
+
+  async function load() {
+    $("page-error").classList.add("hidden");
+    const tu = $("tu-ngay").value, den = $("den-ngay").value;
+    const p = new URLSearchParams({tu_ngay: tu, den_ngay: den});
+    if (tab === "ban-chay") p.set("limit", 30);
+    // Khoang dai thi doanh thu xem theo thang cho gon.
+    if (tab === "doanh-thu" && tu && den && (new Date(den) - new Date(tu)) / 86400000 > 62) p.set("group_by", "month");
+    vung.innerHTML = `<p class="muted">Đang tải...</p>`;
+    const r = await apiGoi("GET", DUONG[tab] + "?" + p.toString());
+    if (!r.ok) {
+      if (kiemTraHetPhien(r.status)) return;
+      $("page-error").textContent = r.status === 400 ? r.loi : thongBaoLoi(r.status, "báo cáo");
+      $("page-error").classList.remove("hidden");
+      vung.innerHTML = "";
+      return;
+    }
+    vung.innerHTML = VE[tab](r.data);
+  }
+
+  function chonNhanh(soNgay) {
+    const den = new Date();
+    const tu = new Date(den.getTime() - soNgay * 86400000);
+    const f = (d) => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+    $("tu-ngay").value = f(tu);
+    $("den-ngay").value = f(den);
+    document.querySelectorAll("#nhanh .chip").forEach((c) => c.setAttribute("aria-pressed", String(Number(c.dataset.ngay) === soNgay)));
+  }
+
+  document.querySelectorAll(".tab").forEach((t) => t.addEventListener("click", () => {
+    document.querySelectorAll(".tab").forEach((x) => x.classList.remove("active"));
+    t.classList.add("active");
+    tab = t.dataset.tab;
+    load();
+  }));
+  $("nhanh").addEventListener("click", (e) => {
+    const b = e.target.closest("button[data-ngay]");
+    if (b) { chonNhanh(Number(b.dataset.ngay)); load(); }
+  });
+  ["tu-ngay", "den-ngay"].forEach((id) => $(id).addEventListener("change", () => {
+    document.querySelectorAll("#nhanh .chip").forEach((c) => c.setAttribute("aria-pressed", "false"));
+    load();
+  }));
+
+  chonNhanh(6);
+  load();
+</script>
+{% endblock %}

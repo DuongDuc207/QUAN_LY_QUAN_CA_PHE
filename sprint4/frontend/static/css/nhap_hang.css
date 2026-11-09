@@ -1,0 +1,134 @@
+/* Trang Nha cung cap va Nhap hang. Dung kem style.css / forms.css (nap sau, nen can
+   chu y do uu tien khi ghi de luat chung nhu `form label`, `form button`, `input`). */
+
+/* ---------- Thanh loc co nhan ro rang ---------- */
+.nh-filters {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px 14px;
+  align-items: flex-end;
+  margin: 0 0 18px;
+}
+
+.nh-field { display: flex; flex-direction: column; gap: 5px; min-width: 150px; }
+.nh-field-grow { flex: 1 1 240px; max-width: 420px; }
+.nh-field label { font-size: 13px; font-weight: 600; color: var(--cf-espresso); }
+.nh-field input,
+.nh-field select { margin: 0; padding: 10px 13px; font-size: 14px; }
+
+/* ---------- Bang ---------- */
+.nh-bang td { overflow-wrap: anywhere; }
+.nh-bang .col-num { white-space: nowrap; }
+
+.nh-link {
+  color: var(--cf-coffee);
+  font-weight: 600;
+  text-decoration: underline;
+}
+.nh-link:hover { color: var(--cf-espresso); }
+
+/* Nut vien dau canh bao (huy phieu): do dam, tuong phan >= 4.5:1 */
+.btn-outline.nh-nguy-hiem { color: var(--cf-danger); border-color: var(--cf-danger); }
+.btn-outline.nh-nguy-hiem:hover { background: var(--cf-danger-bg); color: var(--cf-danger); }
+
+/* Tieu de cot so canh phai cho khop gia tri (.table thead th va .line-table th dang de len .col-num) */
+.table thead th.col-num,
+.line-table th.col-num { text-align: right; }
+.nh-dong-dau span:nth-child(4) { text-align: right; }
+
+/* ---------- Hop thoai ---------- */
+.modal-card.nh-rong { max-width: 840px; }
+
+.nh-meta { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; margin: 0 0 12px; }
+
+.nh-vung-loi:empty { display: none; }
+
+.nh-canh-bao {
+  margin: 0 0 14px;
+}
+
+/* ---------- Dong hang trong phieu nhap ---------- */
+.nh-dong-dau,
+.nh-dong {
+  display: grid;
+  grid-template-columns: minmax(0, 2.4fr) minmax(0, 1.2fr) minmax(0, 1.3fr) minmax(0, 1.2fr) 64px;
+  gap: 8px;
+  align-items: start;
+}
+
+.nh-dong-dau {
+  padding: 0 2px 6px;
+  border-bottom: 1px solid var(--cf-border);
+  font-size: 12.5px;
+  font-weight: 600;
+  color: var(--cf-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.nh-dong { padding: 10px 0; border-bottom: 1px dashed var(--cf-border); }
+
+/* Ghi de `form label` (margin 16px) va `form button` (rong 100%) */
+.nh-dong label { position: relative; display: block; margin: 0; font-weight: 400; font-size: inherit; }
+.nh-dong select,
+.nh-dong input { margin: 0; padding: 9px 10px; font-size: 14px; }
+.nh-dong button.nh-bo-dong { width: auto; margin: 0; padding: 7px 10px; justify-self: end; align-self: center; }
+
+.nh-nhan-nho {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+}
+
+.nh-kem-don-vi { display: flex; align-items: center; gap: 6px; }
+.nh-kem-don-vi input { flex: 1; min-width: 0; }
+.nh-don-vi { font-size: 13px; color: var(--cf-muted); white-space: nowrap; }
+
+.nh-o-tien {
+  align-self: center;
+  text-align: right;
+  font-weight: 600;
+  color: var(--cf-espresso);
+  font-variant-numeric: tabular-nums;
+  overflow-wrap: anywhere;
+}
+
+.nh-danh-sach-dong { margin: 0 0 12px; }
+.nh-danh-sach-dong:empty { display: none; }
+
+.nh-hang-them { display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; margin: 4px 0 14px; }
+.nh-hang-them button { width: auto; margin: 0; padding: 9px 16px; }
+
+.nh-tieu-de-nhom {
+  margin: 4px 0 8px;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--cf-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+/* ---------- Man hinh hep ---------- */
+@media (max-width: 640px) {
+  .nh-dong-dau { display: none; }
+  .nh-dong { grid-template-columns: 1fr 1fr; }
+  .nh-dong .nh-o-nl { grid-column: 1 / -1; }
+  .nh-dong .nh-nhan-nho {
+    position: static;
+    display: block;
+    width: auto;
+    height: auto;
+    overflow: visible;
+    clip: auto;
+    margin-bottom: 3px;
+    font-size: 12.5px;
+    font-weight: 600;
+    color: var(--cf-muted);
+    white-space: normal;
+  }
+  .nh-dong .nh-o-tien { text-align: left; align-self: start; }
+  .nh-field-grow { max-width: none; }
+}

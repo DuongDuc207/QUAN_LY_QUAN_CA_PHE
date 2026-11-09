@@ -1,0 +1,123 @@
+<!-- Hop thoai don hang dung chung (dung kem js/orders.js). Thu tu trong trang = thu tu chong len nhau. -->
+
+<!-- Chi tiet don -->
+<div class="modal hidden" id="modal-order" role="dialog" aria-modal="true" aria-labelledby="order-title">
+  <div class="modal-card modal-wide">
+    <div class="modal-head">
+      <h3 id="order-title">Đơn hàng</h3>
+      <button type="button" class="modal-close" data-dong-modal="modal-order" aria-label="Đóng">×</button>
+    </div>
+    <div class="modal-body" id="order-body"></div>
+    <div class="modal-foot wrap" id="order-foot"></div>
+  </div>
+</div>
+
+<!-- Thu tien -->
+<div class="modal hidden" id="modal-pay" role="dialog" aria-modal="true" aria-labelledby="pay-title">
+  <div class="modal-card">
+    <div class="modal-head">
+      <h3 id="pay-title">Thu tiền</h3>
+      <button type="button" class="modal-close" data-dong-modal="modal-pay" aria-label="Đóng">×</button>
+    </div>
+    <form id="pay-form" novalidate>
+      <div class="modal-body">
+        <div id="pay-error" class="alert error hidden" role="alert"></div>
+        <div class="amount-due">
+          <div class="label" id="pay-order">Cần thu</div>
+          <div class="value" id="pay-amount">—</div>
+        </div>
+        <fieldset class="method-group" id="pay-methods">
+          <legend>Hình thức thanh toán</legend>
+        </fieldset>
+        <div id="pay-cash">
+          <label>Khách đưa (₫)
+            <input type="number" name="tien_khach_dua" min="0" step="1000" inputmode="numeric"
+                   placeholder="Để trống nếu khách đưa vừa đủ">
+          </label>
+          <div class="quick-cash" id="pay-quick" aria-label="Chọn nhanh số tiền khách đưa"></div>
+          <div class="change-row" id="pay-change" aria-live="polite"><span>Tiền thối lại</span><strong>0 ₫</strong></div>
+        </div>
+        <label id="pay-code" class="hidden">Mã giao dịch ngân hàng
+          <input type="text" name="ma_giao_dich" maxlength="100" autocomplete="off" placeholder="Ví dụ: FT2610221234">
+          <span class="field-hint">Xem trong tin nhắn hoặc ứng dụng ngân hàng sau khi đã nhận được tiền.</span>
+        </label>
+      </div>
+      <div class="modal-foot">
+        <button type="button" class="btn-outline" data-dong-modal="modal-pay">Để sau</button>
+        <button type="submit" id="btn-pay">Xác nhận đã nhận tiền</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- Huy don -->
+<div class="modal hidden" id="modal-cancel" role="dialog" aria-modal="true" aria-labelledby="cancel-title">
+  <div class="modal-card">
+    <div class="modal-head">
+      <h3 id="cancel-title">Huỷ đơn</h3>
+      <button type="button" class="modal-close" data-dong-modal="modal-cancel" aria-label="Đóng">×</button>
+    </div>
+    <form id="cancel-form" novalidate>
+      <div class="modal-body">
+        <div id="cancel-error" class="alert error hidden" role="alert"></div>
+        <p class="muted small" style="margin:0 0 8px">Chọn nhanh lý do hoặc tự nhập:</p>
+        <div class="reason-chips" id="cancel-reasons"></div>
+        <label>Lý do huỷ
+          <textarea name="ly_do" rows="3" maxlength="500" required placeholder="Nhập lý do huỷ đơn"></textarea>
+        </label>
+        <div id="cancel-refund" class="note-box hidden"></div>
+      </div>
+      <div class="modal-foot">
+        <button type="button" class="btn-outline" data-dong-modal="modal-cancel">Không huỷ</button>
+        <button type="submit" class="btn-danger" id="btn-cancel">Huỷ đơn</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- Hoan tien -->
+<div class="modal hidden" id="modal-refund" role="dialog" aria-modal="true" aria-labelledby="refund-title">
+  <div class="modal-card">
+    <div class="modal-head">
+      <h3 id="refund-title">Hoàn tiền cho khách</h3>
+      <button type="button" class="modal-close" data-dong-modal="modal-refund" aria-label="Đóng">×</button>
+    </div>
+    <form id="refund-form" novalidate>
+      <div class="modal-body">
+        <div id="refund-error" class="alert error hidden" role="alert"></div>
+        <div class="sum-box" id="refund-info" style="margin-top:0;margin-bottom:16px"></div>
+        <label>Số tiền hoàn (₫)
+          <input type="number" name="so_tien" min="1" step="1000" inputmode="numeric" required>
+          <span class="field-hint">Có thể hoàn một phần, ví dụ khách chỉ trả lại một món.</span>
+        </label>
+        <label>Lý do hoàn tiền
+          <textarea name="ly_do" rows="2" maxlength="500" required placeholder="Ví dụ: Pha sai món, khách không dùng"></textarea>
+        </label>
+        <label id="refund-code-wrap">Mã giao dịch chuyển trả (nếu có)
+          <input type="text" name="ma_giao_dich_hoan" maxlength="100" autocomplete="off">
+        </label>
+      </div>
+      <div class="modal-foot">
+        <button type="button" class="btn-outline" data-dong-modal="modal-refund">Huỷ</button>
+        <button type="submit" class="btn-danger" id="btn-refund">Hoàn tiền</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- Hoa don -->
+<div class="modal hidden" id="modal-invoice" role="dialog" aria-modal="true" aria-labelledby="invoice-title">
+  <div class="modal-card">
+    <div class="modal-head">
+      <h3 id="invoice-title">Hoá đơn</h3>
+      <button type="button" class="modal-close" data-dong-modal="modal-invoice" aria-label="Đóng">×</button>
+    </div>
+    <div class="modal-body">
+      <div class="receipt" id="invoice-body"></div>
+    </div>
+    <div class="modal-foot">
+      <button type="button" class="btn-outline" data-dong-modal="modal-invoice">Đóng</button>
+      <button type="button" id="btn-print">In hoá đơn</button>
+    </div>
+  </div>
+</div>

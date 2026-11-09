@@ -1,0 +1,69 @@
+/* Giao dien rieng cho Khuyen mai, Bao cao, Nhan vien, Lich lam.
+   Dung lai mau va lop co san trong style.css / kho.css; chi them phan chua co. */
+
+.search-box input { margin-top: 0; }
+.kho-head-nut { display: flex; gap: 10px; flex-wrap: wrap; }
+.kho-loc-ngay { display: inline-flex; align-items: center; gap: 8px; font-size: 14px; color: var(--cf-espresso); font-weight: 600; }
+.kho-loc-ngay .filter-select { cursor: text; }
+.kho-check { display: inline-flex; align-items: center; gap: 8px; font-size: 14px; cursor: pointer; }
+.kho-check input { width: 17px; height: 17px; margin: 0; accent-color: var(--cf-coffee); }
+
+/* Ma khuyen mai: chu dang ma de nhan vien doc cho khach */
+.km-ma { font-family: ui-monospace, Consolas, monospace; font-weight: 700; letter-spacing: .5px; }
+
+/* Bao cao */
+.bc-loc { flex-wrap: wrap; gap: 12px; }
+.bc-loc .chip-filter { margin: 0; }
+.tabs { flex-wrap: wrap; }
+.bc-so { font-size: 22px; }
+.bc-hai-cot { display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 20px; }
+#noi-dung .stat-row { margin-bottom: 20px; }
+#noi-dung .section-title { margin-top: 8px; }
+
+/* Lich tuan */
+.lich-tuan {
+  display: grid;
+  grid-template-columns: repeat(7, minmax(130px, 1fr));
+  gap: 10px;
+  overflow-x: auto;
+  padding-bottom: 6px;
+}
+.lich-ngay {
+  background: var(--cf-surface, #fff);
+  border: 1px solid var(--cf-border, #e6dccf);
+  border-radius: var(--cf-radius-sm, 8px);
+  padding: 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  min-height: 140px;
+}
+.lich-ngay h4 { margin: 0; font-size: 13px; text-transform: capitalize; color: var(--cf-espresso); }
+.lich-ngay.hom-nay { border-color: var(--cf-coffee); box-shadow: 0 0 0 1px var(--cf-coffee) inset; }
+.lich-o {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 2px;
+  text-align: left;
+  width: 100%;
+  background: var(--cf-surface-alt, #f7f1ea);
+  color: var(--cf-text, #3b2a20);
+  border: 1px solid var(--cf-border, #e6dccf);
+  padding: 8px;
+  font-weight: 400;
+}
+.lich-o:hover:not(:disabled) { background: #efe4d6; }
+.lich-o:disabled { cursor: default; opacity: 1; }
+.lich-o.da-huy { opacity: .7; }
+.lich-o.da-huy .lich-ten { text-decoration: line-through; }
+.lich-gio { font-size: 12px; font-weight: 700; color: var(--cf-espresso); }
+.lich-ten { font-weight: 600; }
+.lich-o .badge { margin-top: 4px; }
+.ca-form { margin-top: 16px; border-top: 1px solid var(--cf-border, #e6dccf); }
+
+/* POS: o nhap ma khuyen mai */
+.km-nhap { display: flex; gap: 8px; margin-top: 10px; }
+.km-nhap input { margin-top: 0; flex: 1; text-transform: uppercase; }
+.km-nhap button { white-space: nowrap; }
+.km-ket-qua { font-size: 13px; margin-top: 6px; color: #27694a; }

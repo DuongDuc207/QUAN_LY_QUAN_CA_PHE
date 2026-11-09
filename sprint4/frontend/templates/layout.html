@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>{% block title %}Cà Phê Việt{% endblock %}</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/layout.css') }}">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css', v=5) }}">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/forms.css') }}">
+  {% block head %}{% endblock %}
+</head>
+<body>
+  <header class="topbar">
+    <div class="brand">
+      <span class="brand-mark">☕</span>
+      Cà Phê Việt
+    </div>
+    <nav class="nav">
+      <a href="/dashboard"{% if active == 'dashboard' %} class="active"{% endif %}>Trang chủ</a>
+      {% if user and 'order.manage' in (user.quyens or []) %}
+        <a href="/pos"{% if active == 'pos' %} class="active"{% endif %}>Bán hàng</a>
+      {% endif %}
+      {% if user and 'order.view' in (user.quyens or []) %}
+        <a href="/orders"{% if active == 'orders' %} class="active"{% endif %}>Đơn hàng</a>
+      {% endif %}
+      {% set q = (user.quyens if user else []) or [] %}
+      {% if 'account.view' in q or 'employee.view' in q %}
+        <details class="nav-group{% if active in ['accounts', 'employees', 'schedules'] %} active{% endif %}">
+          <summary>Nhân sự</summary>
+          <div class="nav-menu">
+            {% if 'employee.view' in q %}
+              <a href="/employees"{% if active == 'employees' %} class="active"{% endif %}>Hồ sơ nhân viên</a>
+            {% endif %}
+            {% if 'schedule.view' in q %}
+              <a href="/schedules"{% if active == 'schedules' %} class="active"{% endif %}>Ca làm và lịch làm</a>
+            {% endif %}
+            {% if 'account.view' in q %}
+              <a href="/accounts"{% if active == 'accounts' %} class="active"{% endif %}>Tài khoản đăng nhập</a>
+            {% endif %}
+          </div>
+        </details>
+      {% elif 'schedule.view' in q %}
+        <a href="/schedules"{% if active == 'schedules' %} class="active"{% endif %}>Lịch làm của tôi</a>
+      {% endif %}
+      <a href="/menu"{% if active == 'menu' %} class="active"{% endif %}>Thực đơn</a>
+      {% if 'promotion.view' in q %}
+        <a href="/promotions"{% if active == 'promotions' %} class="active"{% endif %}>Khuyến mãi</a>
+      {% endif %}
+      {% if 'inventory.view' in q or 'supplier.view' in q %}
+        <details class="nav-group{% if active in ['inventory', 'recipes', 'suppliers', 'purchases'] %} active{% endif %}">
+          <summary>Kho hàng</summary>
+          <div class="nav-menu">
+            {% if 'inventory.view' in q %}
+              <a href="/inventory"{% if active == 'inventory' %} class="active"{% endif %}>Nguyên liệu và tồn kho</a>
+              <a href="/recipes"{% if active == 'recipes' %} class="active"{% endif %}>Công thức pha chế</a>
+            {% endif %}
+            {% if 'supplier.view' in q %}
+              <a href="/purchases"{% if active == 'purchases' %} class="active"{% endif %}>Nhập hàng</a>
+              <a href="/suppliers"{% if active == 'suppliers' %} class="active"{% endif %}>Nhà cung cấp</a>
+            {% endif %}
+          </div>
+        </details>
+      {% endif %}
+      {% if 'report.view' in q %}
+        <a href="/reports"{% if active == 'reports' %} class="active"{% endif %}>Báo cáo</a>
+      {% endif %}
+      {% if user and 'role.manage' in (user.quyens or []) %}
+        <a href="/roles"{% if active == 'roles' %} class="active"{% endif %}>Phân quyền</a>
+      {% endif %}
+    </nav>
+    <div class="userbox">
+      {% if user and user.ho_ten %}
+        <div class="user-meta">
+          <span class="user-name">{{ user.ho_ten }}</span>
+          <span class="user-role">{{ user.ten_vai_tro }}</span>
+        </div>
+        <button id="btn-logout" type="button" class="btn-ghost">Đăng xuất</button>
+      {% else %}
+        <a href="/login">Đăng nhập</a>
+      {% endif %}
+    </div>
+  </header>
+  <main class="container">
+    {% block content %}{% endblock %}
+  </main>
+  <script>window.QUYEN = {{ ((user.quyens if user else []) or [])|tojson }};</script>
+  <script src="{{ url_for('static', filename='js/main.js', v=5) }}"></script>
+  {% block scripts %}{% endblock %}
+</body>
+</html>

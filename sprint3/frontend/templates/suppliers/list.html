@@ -1,0 +1,244 @@
+{% extends "layout.html" %}
+{% block title %}Nhà cung cấp - Cà Phê Việt{% endblock %}
+{% block head %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/nhap_hang.css', v=1) }}">
+{% endblock %}
+{% block content %}
+{% set co_quan_ly = 'supplier.manage' in (user.quyens or []) %}
+
+<div class="page-head pos-head">
+  <div>
+    <h2>Nhà cung cấp</h2>
+    <p class="muted">Nơi quán nhập nguyên liệu, thông tin liên hệ và lịch sử nhập hàng.</p>
+  </div>
+  {% if co_quan_ly %}
+    <button type="button" id="btn-add">+ Thêm nhà cung cấp</button>
+  {% endif %}
+</div>
+
+<div class="toolbar">
+  <div class="search-box">
+    <span class="search-icon">🔍</span>
+    <input id="search-input" type="search" placeholder="Tìm theo tên, số điện thoại, email..." aria-label="Tìm nhà cung cấp">
+  </div>
+  <select id="filter-status" class="filter-select" aria-label="Lọc theo tình trạng hợp tác">
+    <option value="">Tất cả</option>
+    <option value="active">Đang hợp tác</option>
+    <option value="inactive">Ngừng hợp tác</option>
+  </select>
+</div>
+
+<div id="page-error" class="alert error hidden"></div>
+
+<div class="table-wrap">
+  <table class="table" id="ncc-table">
+    <thead>
+      <tr>
+        <th>Nhà cung cấp</th>
+        <th>Liên hệ</th>
+        <th class="col-num">Số phiếu nhập</th>
+        <th>Tình trạng</th>
+        <th class="col-actions">Thao tác</th>
+      </tr>
+    </thead>
+    <tbody><tr class="empty-row"><td colspan="5">Đang tải...</td></tr></tbody>
+  </table>
+</div>
+<div class="pager" id="pager"></div>
+
+<!-- Them / sua -->
+<div class="modal hidden" id="modal-ncc" role="dialog" aria-modal="true" aria-labelledby="ncc-title">
+  <div class="modal-card">
+    <div class="modal-head">
+      <h3 id="ncc-title">Thêm nhà cung cấp</h3>
+      <button type="button" class="modal-close" data-dong-modal="modal-ncc" aria-label="Đóng">×</button>
+    </div>
+    <form id="ncc-form" novalidate>
+      <div class="modal-body">
+        <div id="ncc-error" class="alert error hidden" role="alert"></div>
+        <input type="hidden" name="id">
+        <label>Tên nhà cung cấp
+          <input type="text" name="ten_nha_cung_cap" maxlength="150" required placeholder="Công ty Cà phê Tây Nguyên">
+        </label>
+        <div class="form-row">
+          <label>Số điện thoại
+            <input type="tel" name="so_dien_thoai" maxlength="15" placeholder="0901 234 567">
+          </label>
+          <label>Email
+            <input type="email" name="email" maxlength="255" placeholder="lienhe@nhacungcap.vn">
+          </label>
+        </div>
+        <label>Địa chỉ
+          <input type="text" name="dia_chi" maxlength="255">
+        </label>
+        <label class="perm-item hidden" id="ncc-hop-tac-wrap" style="padding-left:0">
+          <input type="checkbox" name="trang_thai" checked>
+          Đang hợp tác
+        </label>
+      </div>
+      <div class="modal-foot">
+        <button type="button" class="btn-outline" data-dong-modal="modal-ncc">Huỷ</button>
+        <button type="submit" id="btn-save">Lưu</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- Chi tiet -->
+<div class="modal hidden" id="modal-detail" role="dialog" aria-modal="true" aria-labelledby="detail-title">
+  <div class="modal-card modal-wide">
+    <div class="modal-head">
+      <h3 id="detail-title">Nhà cung cấp</h3>
+      <button type="button" class="modal-close" data-dong-modal="modal-detail" aria-label="Đóng">×</button>
+    </div>
+    <div class="modal-body" id="detail-body"></div>
+    <div class="modal-foot">
+      <button type="button" class="btn-outline" data-dong-modal="modal-detail">Đóng</button>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="{{ url_for('static', filename='js/nha_cung_cap.js', v=1) }}"></script>
+<script>
+  const CO_QUAN_LY = {{ 'true' if co_quan_ly else 'false' }};
+  const SO_DONG = 20;
+  const $ = (id) => document.getElementById(id);
+  const tbody = document.querySelector("#ncc-table tbody");
+  const form = $("ncc-form");
+  let ds = [];
+  let trang = 1;
+
+  function veBang(rows) {
+    ds = rows;
+    if (!rows.length) {
+      tbody.innerHTML = `<tr class="empty-row"><td colspan="5">Chưa có nhà cung cấp nào phù hợp.</td></tr>`;
+      return;
+    }
+    tbody.innerHTML = rows.map((n) => {
+      const hopTac = Boolean(n.TrangThai);
+      const lienHe = [n.SoDienThoai, n.Email].filter(Boolean).map(escapeHtml).join("<br>") || `<span class="muted">—</span>`;
+      return `<tr>
+        <td><div class="cell-name">${escapeHtml(n.TenNhaCungCap)}</div>
+          ${n.DiaChi ? `<div class="cell-sub">${escapeHtml(n.DiaChi)}</div>` : ""}</td>
+        <td class="cell-sub">${lienHe}</td>
+        <td class="col-num">${Number(n.SoPhieuNhap || 0).toLocaleString("vi-VN")}</td>
+        <td><span class="badge ${hopTac ? "badge-on" : "badge-off"}">${hopTac ? "Đang hợp tác" : "Ngừng hợp tác"}</span></td>
+        <td class="col-actions"><div class="row-actions">
+          <button type="button" class="btn-icon" data-xem="${n.NhaCungCapID}">Chi tiết</button>
+          ${CO_QUAN_LY ? `<button type="button" class="btn-icon" data-sua="${n.NhaCungCapID}">Sửa</button>` : ""}
+        </div></td>
+      </tr>`;
+    }).join("");
+  }
+
+  async function load() {
+    $("page-error").classList.add("hidden");
+    const p = new URLSearchParams({page: trang, per_page: SO_DONG});
+    const q = $("search-input").value.trim();
+    if (q) p.set("q", q);
+    if ($("filter-status").value) p.set("status", $("filter-status").value);
+    const r = await apiGoi("GET", "/api/v1/suppliers?" + p.toString());
+    if (!r.ok) {
+      if (kiemTraHetPhien(r.status)) return;
+      $("page-error").textContent = thongBaoLoi(r.status, "danh sách nhà cung cấp");
+      $("page-error").classList.remove("hidden");
+      tbody.innerHTML = `<tr class="empty-row"><td colspan="5">Không có dữ liệu để hiển thị.</td></tr>`;
+      return;
+    }
+    veBang(r.data.items);
+    const total = r.data.total;
+    const soTrang = Math.max(1, Math.ceil(total / SO_DONG));
+    $("pager").innerHTML = total <= SO_DONG ? (total ? `<span class="muted">${total} nhà cung cấp</span>` : "")
+      : `<span class="muted">Trang ${trang}/${soTrang}</span>
+        <button type="button" class="btn-outline" data-trang="${trang - 1}" ${trang <= 1 ? "disabled" : ""}>‹ Trước</button>
+        <button type="button" class="btn-outline" data-trang="${trang + 1}" ${trang >= soTrang ? "disabled" : ""}>Sau ›</button>`;
+  }
+
+  async function xemChiTiet(id) {
+    const r = await apiGoi("GET", `/api/v1/suppliers/${id}`);
+    if (!r.ok) { if (!kiemTraHetPhien(r.status)) hienToast(r.loi); return; }
+    const n = r.data;
+    $("detail-title").textContent = n.TenNhaCungCap;
+    const phieu = n.PhieuGanNhat || [];
+    $("detail-body").innerHTML = `
+      <dl class="detail-list">
+        <div class="detail-row"><dt>Số điện thoại</dt><dd>${escapeHtml(n.SoDienThoai || "Chưa có")}</dd></div>
+        <div class="detail-row"><dt>Email</dt><dd>${escapeHtml(n.Email || "Chưa có")}</dd></div>
+        <div class="detail-row"><dt>Địa chỉ</dt><dd>${escapeHtml(n.DiaChi || "Chưa có")}</dd></div>
+        <div class="detail-row"><dt>Tổng số phiếu nhập</dt><dd>${Number(n.TongSoPhieu || 0)}</dd></div>
+        <div class="detail-row"><dt>Tổng tiền đã nhận hàng</dt><dd>${dinhDangGia(n.TongTienDaNhan)}</dd></div>
+      </dl>
+      <h4 class="sub-title">Phiếu nhập gần nhất</h4>
+      ${phieu.length ? `<table class="line-table"><tbody>${phieu.map((p) => `<tr>
+        <td><a class="btn-link" href="/purchases?q=${encodeURIComponent(p.MaPhieuNhap)}">${escapeHtml(p.MaPhieuNhap)}</a><div class="cell-sub">${dinhDangThoiGian(p.NgayNhap)}</div></td>
+        <td>${huyHieuPhieuNhap(p.TrangThai)}</td>
+        <td class="col-num">${dinhDangGia(p.TongTien)}</td></tr>`).join("")}</tbody></table>`
+        : `<p class="muted">Chưa có phiếu nhập nào.</p>`}`;
+    moModal("modal-detail");
+  }
+
+  function moForm(n) {
+    form.reset();
+    $("ncc-error").classList.add("hidden");
+    form.id.value = n ? n.NhaCungCapID : "";
+    $("ncc-title").textContent = n ? "Sửa nhà cung cấp" : "Thêm nhà cung cấp";
+    $("ncc-hop-tac-wrap").classList.toggle("hidden", !n);
+    if (n) {
+      form.ten_nha_cung_cap.value = n.TenNhaCungCap || "";
+      form.so_dien_thoai.value = n.SoDienThoai || "";
+      form.email.value = n.Email || "";
+      form.dia_chi.value = n.DiaChi || "";
+      form.trang_thai.checked = Boolean(n.TrangThai);
+    }
+    moModal("modal-ncc");
+  }
+
+  form.addEventListener("submit", async (e) => {
+    e.preventDefault();
+    const err = $("ncc-error");
+    err.classList.add("hidden");
+    const id = form.id.value;
+    const body = {
+      ten_nha_cung_cap: form.ten_nha_cung_cap.value.trim(),
+      so_dien_thoai: form.so_dien_thoai.value.trim(),
+      email: form.email.value.trim(),
+      dia_chi: form.dia_chi.value.trim(),
+    };
+    if (!body.ten_nha_cung_cap) { err.textContent = "Vui lòng nhập tên nhà cung cấp."; err.classList.remove("hidden"); return; }
+    if (id) body.trang_thai = form.trang_thai.checked;
+    const btn = $("btn-save");
+    btn.disabled = true;
+    const r = id ? await apiGoi("PUT", `/api/v1/suppliers/${id}`, body) : await apiGoi("POST", "/api/v1/suppliers", body);
+    btn.disabled = false;
+    if (!r.ok) {
+      if (kiemTraHetPhien(r.status)) return;
+      err.textContent = r.loi;
+      err.classList.remove("hidden");
+      return;
+    }
+    dongModal("modal-ncc");
+    hienToast(id ? "Đã cập nhật nhà cung cấp." : "Đã thêm nhà cung cấp.");
+    load();
+  });
+
+  tbody.addEventListener("click", (e) => {
+    const b = e.target.closest("button");
+    if (!b) return;
+    if (b.dataset.xem) xemChiTiet(b.dataset.xem);
+    else if (b.dataset.sua) moForm(ds.find((x) => String(x.NhaCungCapID) === b.dataset.sua));
+  });
+  $("pager").addEventListener("click", (e) => {
+    const b = e.target.closest("button[data-trang]");
+    if (b && !b.disabled) { trang = Number(b.dataset.trang); load(); }
+  });
+  let timer;
+  $("search-input").addEventListener("input", () => { clearTimeout(timer); timer = setTimeout(() => { trang = 1; load(); }, 300); });
+  $("filter-status").addEventListener("change", () => { trang = 1; load(); });
+  const btnAdd = $("btn-add");
+  if (btnAdd) btnAdd.addEventListener("click", () => moForm(null));
+
+  load();
+</script>
+{% endblock %}

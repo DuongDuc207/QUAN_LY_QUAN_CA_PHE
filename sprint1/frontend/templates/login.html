@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Đăng nhập - Cà Phê Việt</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/layout.css') }}">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css', v=3) }}">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/forms.css') }}">
+</head>
+<body class="login-body">
+  <div class="login-card">
+    <div class="login-logo">☕</div>
+    <h1>Cà Phê Việt</h1>
+    <p class="login-sub">Hệ thống quản lý quán cà phê</p>
+    <div id="login-error" class="alert error hidden"></div>
+    <form id="login-form">
+      <label>Email
+        <input type="email" name="email" placeholder="ban@caphe.vn" required autofocus>
+      </label>
+      <label>Mật khẩu
+        <input type="password" name="password" placeholder="Nhập mật khẩu" required>
+      </label>
+      <button type="submit">Đăng nhập</button>
+    </form>
+  </div>
+  <script src="{{ url_for('static', filename='js/main.js', v=3) }}"></script>
+  <script>
+    document.getElementById("login-form").addEventListener("submit", async (e) => {
+      e.preventDefault();
+      const form = new FormData(e.target);
+      const err = document.getElementById("login-error");
+      err.classList.add("hidden");
+      const res = await fetch("/api/v1/auth/login", {
+        method: "POST",
+        headers: {"Content-Type": "application/json"},
+        body: JSON.stringify({email: form.get("email"), password: form.get("password")}),
+      });
+      const data = await res.json();
+      if (!res.ok || !data.success) {
+        err.textContent = thongBaoDangNhap(res.status, data.message);
+        err.classList.remove("hidden");
+        return;
+      }
+      window.location.href = "/dashboard";
+    });
+  </script>
+</body>
+</html>

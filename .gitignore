@@ -1,0 +1,15 @@
+# Python environments and generated files
+**/.venv/
+**/__pycache__/
+**/*.py[cod]
+**/.pytest_cache/
+**/pytest-cache-files-*/
+
+# Local configuration and generated sample-data bookkeeping
+**/.env
+**/du_lieu_mau_ids.json
+**/du_lieu_mau_ids.json.cu
+
+# Local archives and logs
+*.zip
+*.log

@@ -1,0 +1,179 @@
+{% extends "layout.html" %}
+{% block title %}Đơn hàng - Cà Phê Việt{% endblock %}
+{% block content %}
+<div class="page-head pos-head">
+  <div>
+    <h2>Đơn hàng</h2>
+    <p class="muted">Theo dõi đơn đang pha chế, thu tiền và xem lại hoá đơn.</p>
+  </div>
+  {% if 'order.manage' in (user.quyens or []) %}
+    <a class="btn" href="/pos">+ Đơn mới</a>
+  {% endif %}
+</div>
+
+<div class="toolbar">
+  <div class="search-box">
+    <span class="search-icon">🔍</span>
+    <input id="search-input" type="search" placeholder="Tìm theo mã đơn..." aria-label="Tìm theo mã đơn">
+  </div>
+  <input id="filter-date" type="date" class="filter-select" aria-label="Lọc theo ngày">
+  <select id="filter-status" class="filter-select" aria-label="Lọc theo tình trạng đơn">
+    <option value="">Tất cả tình trạng</option>
+  </select>
+  <select id="filter-paid" class="filter-select" aria-label="Lọc theo thanh toán">
+    <option value="">Tất cả thanh toán</option>
+    <option value="chua">Chưa thu tiền</option>
+    <option value="da">Đã thu tiền</option>
+  </select>
+</div>
+
+<div id="page-error" class="alert error hidden"></div>
+
+<div class="table-wrap">
+  <table class="table" id="orders-table">
+    <thead>
+      <tr>
+        <th>Mã đơn</th>
+        <th>Thời gian</th>
+        <th class="col-num">Số món</th>
+        <th class="col-num">Thành tiền</th>
+        <th>Tình trạng</th>
+        <th>Thanh toán</th>
+        <th class="col-actions">Thao tác</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr class="empty-row"><td colspan="7">Đang tải đơn hàng...</td></tr>
+    </tbody>
+  </table>
+</div>
+
+<div class="pager" id="pager"></div>
+
+{% include "orders/_modals.html" %}
+{% endblock %}
+
+{% block scripts %}
+<script src="{{ url_for('static', filename='js/orders.js', v=4) }}"></script>
+<script>
+  const SO_DONG = 20;
+  const tbody = document.querySelector("#orders-table tbody");
+  const pageError = document.getElementById("page-error");
+  const filterDate = document.getElementById("filter-date");
+  let trang = 1;
+  let dsDon = [];
+
+  document.getElementById("filter-status").insertAdjacentHTML("beforeend",
+    luaChonTinhTrangDon().map((t) => `<option value="${t.ma}">${escapeHtml(t.nhan)}</option>`).join(""));
+  filterDate.value = ngayHomNay();
+
+  function showEmpty(text) {
+    tbody.innerHTML = `<tr class="empty-row"><td colspan="7">${escapeHtml(text)}</td></tr>`;
+  }
+
+  function render(rows) {
+    dsDon = rows;
+    if (!rows.length) {
+      showEmpty(filterDate.value === ngayHomNay() && !document.getElementById("search-input").value
+        ? "Hôm nay chưa có đơn nào." : "Không có đơn nào phù hợp.");
+      return;
+    }
+    tbody.innerHTML = rows.map((d) => {
+      const buoc = buocTiepDon(d.TrangThai);
+      const nutBuoc = buoc && DonHang.coQuyen("order.manage")
+        ? `<button type="button" class="btn-icon" data-buoc="${d.DonHangID}">${escapeHtml(buoc.nut)}</button>` : "";
+      return `<tr>
+        <td><div class="cell-name">${escapeHtml(d.MaDonHang)}</div>
+          ${d.NguoiTao ? `<div class="cell-sub">${escapeHtml(d.NguoiTao)}</div>` : ""}</td>
+        <td>${dinhDangThoiGian(d.ThoiGianDat)}</td>
+        <td class="col-num">${Number(d.SoMon || 0).toLocaleString("vi-VN")}</td>
+        <td class="col-num">${dinhDangGia(d.ThanhTien)}</td>
+        <td>${huyHieuDon(d.TrangThai)}</td>
+        <td>${huyHieuThuTien(d.TrangThaiThanhToan)}</td>
+        <td class="col-actions"><div class="row-actions">
+          ${nutBuoc}
+          <button type="button" class="btn-icon" data-xem="${d.DonHangID}">Chi tiết</button>
+        </div></td>
+      </tr>`;
+    }).join("");
+  }
+
+  function renderPager(total) {
+    const soTrang = Math.max(1, Math.ceil(total / SO_DONG));
+    const pager = document.getElementById("pager");
+    if (total <= SO_DONG) {
+      pager.innerHTML = total ? `<span class="muted">${total.toLocaleString("vi-VN")} đơn</span>` : "";
+      return;
+    }
+    pager.innerHTML = `
+      <span class="muted">Trang ${trang}/${soTrang} · ${total.toLocaleString("vi-VN")} đơn</span>
+      <button type="button" class="btn-outline" data-trang="${trang - 1}" ${trang <= 1 ? "disabled" : ""}>‹ Trước</button>
+      <button type="button" class="btn-outline" data-trang="${trang + 1}" ${trang >= soTrang ? "disabled" : ""}>Sau ›</button>`;
+  }
+
+  async function load() {
+    pageError.classList.add("hidden");
+    const p = new URLSearchParams({page: trang, per_page: SO_DONG});
+    const q = document.getElementById("search-input").value.trim();
+    const status = document.getElementById("filter-status").value;
+    const paid = document.getElementById("filter-paid").value;
+    if (q) p.set("q", q);
+    if (status) p.set("status", status);
+    if (paid) p.set("paid", paid);
+    if (filterDate.value) p.set("date", filterDate.value);
+    const r = await apiGoi("GET", "/api/v1/orders?" + p.toString());
+    if (!r.ok) {
+      if (kiemTraHetPhien(r.status)) return;
+      pageError.textContent = thongBaoLoi(r.status, "danh sách đơn hàng");
+      pageError.classList.remove("hidden");
+      showEmpty("Không có dữ liệu để hiển thị.");
+      return;
+    }
+    render(r.data.items);
+    renderPager(r.data.total);
+  }
+
+  function locLai() { trang = 1; load(); }
+
+  tbody.addEventListener("click", async (e) => {
+    const b = e.target.closest("button");
+    if (!b) return;
+    if (b.dataset.xem) {
+      DonHang.moChiTiet(b.dataset.xem, load);
+    } else if (b.dataset.buoc) {
+      const d = dsDon.find((x) => String(x.DonHangID) === b.dataset.buoc);
+      if (!d) return;
+      b.disabled = true;
+      const r = await DonHang.chuyenBuoc(d);
+      b.disabled = false;
+      if (r && !r.ok) {
+        if (kiemTraHetPhien(r.status)) return;
+        hienToast(r.loi);
+      }
+      if (r) load();
+    }
+  });
+
+  document.getElementById("pager").addEventListener("click", (e) => {
+    const b = e.target.closest("button[data-trang]");
+    if (!b || b.disabled) return;
+    trang = Number(b.dataset.trang);
+    load();
+  });
+
+  let timer;
+  document.getElementById("search-input").addEventListener("input", () => {
+    clearTimeout(timer);
+    timer = setTimeout(locLai, 300);
+  });
+  ["filter-date", "filter-status", "filter-paid"].forEach((id) =>
+    document.getElementById(id).addEventListener("change", locLai));
+
+  // Tu cap nhat moi 30 giay de quay pha che thay don moi (bo qua khi dang mo hop thoai).
+  setInterval(() => {
+    if (document.visibilityState === "visible" && !document.querySelector(".modal:not(.hidden)")) load();
+  }, 30000);
+
+  load();
+</script>
+{% endblock %}
