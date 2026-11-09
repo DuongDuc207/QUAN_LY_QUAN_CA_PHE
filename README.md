@@ -46,7 +46,15 @@ if (-not (Test-Path .env)) { Copy-Item .env.example .env }
 
 Chỉnh `.env` theo SQL Server của bạn (`DB_SERVER`, `DB_NAME`, `DB_DRIVER`, và
 thông tin đăng nhập nếu không dùng Windows Authentication). Đặt
-`FLASK_SECRET_KEY` thành giá trị bí mật riêng trước khi triển khai.
+`FLASK_SECRET_KEY` thành giá trị ngẫu nhiên riêng (ít nhất 32 ký tự) trước khi
+chạy ứng dụng:
+
+```powershell
+py -c "import secrets; print(secrets.token_hex(32))"
+```
+
+Chép kết quả vào `.env`. Ứng dụng từ chối khởi động nếu khóa thiếu hoặc quá ngắn;
+không dùng chung khóa giữa môi trường phát triển và triển khai.
 
 Nếu cần tạo cơ sở dữ liệu mới, chạy lần lượt các script sau trong thư mục `sprint4`:
 
@@ -135,3 +143,7 @@ todos.md                Danh sách việc cần làm
 Không commit `.env`, mật khẩu, khóa ứng dụng, môi trường ảo, cache kiểm thử hay
 dữ liệu ID sinh tự động. Dùng `.env.example` làm mẫu và lưu giá trị bí mật trong
 môi trường triển khai phù hợp.
+
+Ứng dụng cũ đặt ở thư mục gốc repo (nếu sử dụng) đọc `.env` ở thư mục gốc; dùng
+file `.env.example` gốc làm mẫu. Các ứng dụng trong `sprint1`–`sprint4` đọc cấu
+hình riêng trong thư mục tương ứng.

@@ -34,6 +34,10 @@ py tao_tai_khoan.py
 py app.py
 ```
 
+Truoc khi khoi dong, dat `FLASK_SECRET_KEY` trong `.env` bang mot khoa rieng tao
+boi lenh `py -c "import secrets; print(secrets.token_hex(32))"`. Ung dung tu choi
+khoi dong neu khoa bi thieu hoac ngan hon 32 ky tu.
+
 ## Cập nhật cơ sở dữ liệu tùy chọn
 
 Ứng dụng Sprint 3 không cần các bảng khuyến mãi và lịch nhân sự. Nếu cùng cơ sở dữ

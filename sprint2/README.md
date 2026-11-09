@@ -33,6 +33,10 @@ py tao_tai_khoan.py
 py app.py
 ```
 
+Truoc khi khoi dong, dat `FLASK_SECRET_KEY` trong `.env` bang mot khoa rieng tao
+boi lenh `py -c "import secrets; print(secrets.token_hex(32))"`. Ung dung tu choi
+khoi dong neu khoa bi thieu hoac ngan hon 32 ky tu.
+
 `seed.sql` chi nap vai tro + quyen, khong co tai khoan hay mon mau.
 Tai khoan dau tien tao bang terminal (chon vi tri 1 = Quan tri vien), sau do
 dang nhap web de them nhan vien, nhom mon va mon.

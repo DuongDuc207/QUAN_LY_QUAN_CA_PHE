@@ -33,14 +33,21 @@ làm việc ngày 09-11-2026. Không ghi lại thông tin xác thực, token ho�
 - `py -m unittest discover -s tests -v`: 6 kiểm thử đạt khi bật UTF-8 qua
   `PYTHONUTF8=1`. Lần chạy đầu gặp lỗi encoding của console Windows; không cần
   sửa mã nguồn để xử lý.
+- Rà soát nhánh trước merge phát hiện khóa ký session mặc định công khai. Đã thay
+  cấu hình trong app gốc và bốn sprint bằng yêu cầu khóa ít nhất 32 ký tự, bỏ giá
+  trị mẫu có thể dùng, thêm hướng dẫn tạo khóa và test thiếu/ngắn/đủ độ dài.
+- `tests.test_bootstrap` và `tests.test_secret_settings`: 8 kiểm thử đạt trên nhánh.
+- `compileall` trên cấu hình và kiểm thử Python: đạt. Kiểm thử DB/SQL Server chưa chạy.
 - Chưa chạy kiểm thử tích hợp hoặc áp dụng SQL lên SQL Server.
+- Rà soát trước merge phát hiện khóa ký session mặc định công khai trong ứng dụng
+  gốc và bốn thư mục sprint; việc sửa lỗi đang được triển khai, chưa merge.
 
 ## Tình trạng đưa mã lên GitHub
 
 Git for Windows đã được cài và Git Credential Manager xác nhận tài khoản
 `DuongDuc207` đã đăng nhập. Worktree riêng được tạo từ `main` trên nhánh
-`copilot/project-workspace-sync`. Commit `ca0dac71c3f0d97b3d358147d18834ebab4a735d`
-đã được push thành công. Nhánh `main` chưa bị thay đổi.
+`copilot/project-workspace-sync`. Các commit khởi tạo và tài liệu đã được push;
+bản sửa khóa session đang được kiểm thử và chờ push. Nhánh `main` chưa bị thay đổi.
 
 Nhánh: <https://github.com/DuongDuc207/QUAN_LY_QUAN_CA_PHE/tree/copilot/project-workspace-sync>
 

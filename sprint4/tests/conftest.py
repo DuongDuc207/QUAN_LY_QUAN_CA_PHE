@@ -1,5 +1,9 @@
+import os
+
 import pytest
 from dotenv import load_dotenv
+
+os.environ.setdefault("FLASK_SECRET_KEY", "test-only-" + "0" * 64)
 
 load_dotenv()
 

@@ -13,4 +13,9 @@ DB_USER = os.getenv("DB_USER", "")
 DB_PASSWORD = os.getenv("DB_PASSWORD", "")
 DB_TRUSTED = os.getenv("DB_TRUSTED", "yes").lower() in ("1", "true", "yes")
 
-SECRET_KEY = os.getenv("FLASK_SECRET_KEY", "quanlycaphe-secret-key")
+SECRET_KEY = os.getenv("FLASK_SECRET_KEY", "").strip()
+if len(SECRET_KEY) < 32:
+    raise RuntimeError(
+        "FLASK_SECRET_KEY must be set to a unique value of at least 32 characters. "
+        "Generate one with: py -c \"import secrets; print(secrets.token_hex(32))\""
+    )

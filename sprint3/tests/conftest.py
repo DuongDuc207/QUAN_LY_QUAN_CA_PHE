@@ -1,4 +1,9 @@
+import os
+
 import pytest
+
+os.environ.setdefault("FLASK_SECRET_KEY", "test-only-" + "0" * 64)
+
 from config.settings import DB_NAME
 from tests import du_lieu_test  # noqa: E402
 
