@@ -20,12 +20,12 @@
 
 - Kiểm thử tích hợp với SQL Server riêng chưa chạy; hiện chỉ xác nhận tính nhất
   quán của các script SQL và không kết nối CSDL vận hành.
-- Push bản sửa bảo mật lên nhánh và yêu cầu rà soát lại; chưa merge vào `main`.
+- Kiểm thử tích hợp với SQL Server vẫn cần chạy riêng trước khi triển khai.
 
 ## Kết quả push
 
-- Đã push commit `ca0dac71c3f0d97b3d358147d18834ebab4a735d` lên nhánh
-  `copilot/project-workspace-sync`.
+- Các thay đổi đã push lên nhánh `copilot/project-workspace-sync`; commit mới nhất
+  bao gồm bản sửa khóa session và cập nhật trạng thái rà soát.
 - Các file `.env`, môi trường ảo, cache kiểm thử, ZIP và file rỗng bất thường đã
   được loại khỏi nội dung chuẩn bị commit.
 
@@ -34,7 +34,9 @@
 - Có thể mở pull request tại:
   <https://github.com/DuongDuc207/QUAN_LY_QUAN_CA_PHE/compare/main...copilot/project-workspace-sync>
 
-## Theo dõi sửa lỗi bảo mật
+## Rà soát trước merge
 
-- Bản sửa và kiểm thử đã hoàn thành trên worktree; không merge cho đến khi được
-  push và rà soát lại.
+- Khóa session yếu/mặc định đã được loại bỏ ở ứng dụng gốc và bốn sprint.
+- 8 kiểm thử bootstrap và cấu hình khóa đạt; compile Python đạt.
+- Code review lại nhánh không phát hiện vấn đề nghiêm trọng.
+- `main` được giữ nguyên cho tới khi cập nhật này được merge.

@@ -38,16 +38,16 @@ làm việc ngày 09-11-2026. Không ghi lại thông tin xác thực, token ho�
   trị mẫu có thể dùng, thêm hướng dẫn tạo khóa và test thiếu/ngắn/đủ độ dài.
 - `tests.test_bootstrap` và `tests.test_secret_settings`: 8 kiểm thử đạt trên nhánh.
 - `compileall` trên cấu hình và kiểm thử Python: đạt. Kiểm thử DB/SQL Server chưa chạy.
+- Code review lại commit sau sửa khóa session: không phát hiện vấn đề nghiêm trọng.
 - Chưa chạy kiểm thử tích hợp hoặc áp dụng SQL lên SQL Server.
-- Rà soát trước merge phát hiện khóa ký session mặc định công khai trong ứng dụng
-  gốc và bốn thư mục sprint; việc sửa lỗi đang được triển khai, chưa merge.
 
 ## Tình trạng đưa mã lên GitHub
 
 Git for Windows đã được cài và Git Credential Manager xác nhận tài khoản
 `DuongDuc207` đã đăng nhập. Worktree riêng được tạo từ `main` trên nhánh
-`copilot/project-workspace-sync`. Các commit khởi tạo và tài liệu đã được push;
-bản sửa khóa session đang được kiểm thử và chờ push. Nhánh `main` chưa bị thay đổi.
+`copilot/project-workspace-sync`. Commit khởi tạo, tài liệu và sửa khóa session
+đã được push. Bản sửa bảo mật đã qua rà soát lại; đang tiến hành yêu cầu merge
+fast-forward vào `main`.
 
 Nhánh: <https://github.com/DuongDuc207/QUAN_LY_QUAN_CA_PHE/tree/copilot/project-workspace-sync>
 

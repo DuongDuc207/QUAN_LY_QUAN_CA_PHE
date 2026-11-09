@@ -6,6 +6,6 @@ khi sửa hoặc bổ sung bằng chứng.
 | ID | Mức độ | Mô tả | Trạng thái | Ghi chú |
 | --- | --- | --- | --- | --- |
 | BUG-001 | Thấp | Schema bổ sung khuyến mãi và nhân sự được đặt tên theo Sprint 4, làm tài liệu cập nhật CSDL phụ thuộc vào số sprint. | Đã xử lý | Thay bằng hai script cập nhật theo chức năng và cập nhật README liên quan. |
-| BUG-002 | Cao | Khóa ký session Flask mặc định công khai cho phép giả mạo session và quyền người dùng. | Đã xử lý trên nhánh | Tất cả ứng dụng yêu cầu `FLASK_SECRET_KEY` riêng tối thiểu 32 ký tự; có kiểm thử khóa thiếu/ngắn. Chờ rà soát và push trước khi merge. |
+| BUG-002 | Cao | Khóa ký session Flask mặc định công khai cho phép giả mạo session và quyền người dùng. | Đã xử lý | Tất cả ứng dụng yêu cầu `FLASK_SECRET_KEY` riêng tối thiểu 32 ký tự; có kiểm thử khóa thiếu/ngắn và rà soát lại không phát hiện vấn đề nghiêm trọng. |
 
 Chưa xác nhận lỗi nghiệp vụ khác trong mã ứng dụng qua lần rà soát này.
