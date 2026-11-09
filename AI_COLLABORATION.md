@@ -46,10 +46,10 @@ làm việc ngày 09-11-2026. Không ghi lại thông tin xác thực, token ho�
 Git for Windows đã được cài và Git Credential Manager xác nhận tài khoản
 `DuongDuc207` đã đăng nhập. Worktree riêng được tạo từ `main` trên nhánh
 `copilot/project-workspace-sync`. Commit khởi tạo, tài liệu và sửa khóa session
-đã được push. Bản sửa bảo mật đã qua rà soát lại; đang tiến hành yêu cầu merge
-fast-forward vào `main`.
+đã được push. Bản sửa bảo mật đã qua rà soát lại; nhánh được fast-forward thành
+công vào `main` tại commit `ed64ab8f52e057cad7f468138303b74cb13c5343`.
 
-Nhánh: <https://github.com/DuongDuc207/QUAN_LY_QUAN_CA_PHE/tree/copilot/project-workspace-sync>
+Nhánh đã merge: <https://github.com/DuongDuc207/QUAN_LY_QUAN_CA_PHE/tree/main>
 
 Tạo pull request: <https://github.com/DuongDuc207/QUAN_LY_QUAN_CA_PHE/compare/main...copilot/project-workspace-sync>
 
