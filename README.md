@@ -90,11 +90,23 @@ quyền mới. Các script này được lưu đồng nhất trong thư mục `d
 Kiểm tra cơ chế khởi động độc lập của bốn phiên bản:
 
 ```powershell
-py -m unittest discover -s tests -v
+py -m unittest tests.test_bootstrap -v
 ```
 
-Các bộ kiểm thử tích hợp nằm trong `sprintN\tests`. Cài dependencies phát triển
-vào môi trường của phiên bản cần kiểm thử rồi chạy:
+Các kiểm thử tích hợp ở `tests\` và `sprintN\tests` dùng pytest, có thể cần SQL
+Server và dữ liệu thử nghiệm. Cài dependencies phát triển trước:
+
+```powershell
+py -m pip install -r requirements-dev.txt
+```
+
+Sau đó chạy bộ kiểm thử cần thiết, ví dụ:
+
+```powershell
+py -m pytest tests\ -v
+```
+
+Để chạy kiểm thử tích hợp của Sprint 4 trong môi trường riêng:
 
 ```powershell
 cd sprint4
