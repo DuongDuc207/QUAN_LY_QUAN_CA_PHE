@@ -23,8 +23,14 @@
 - Repo đích hiện có ứng dụng Sprint 1 ở thư mục gốc; đã chọn giữ nguyên `main`,
   không thay thế nội dung hiện có.
 
-## Đang thực hiện
+## Kết quả push
 
-- Rà soát và commit thay đổi trên nhánh `copilot/project-workspace-sync`; chưa push.
+- Đã push commit `ca0dac71c3f0d97b3d358147d18834ebab4a735d` lên nhánh
+  `copilot/project-workspace-sync`.
 - Các file `.env`, môi trường ảo, cache kiểm thử, ZIP và file rỗng bất thường đã
   được loại khỏi nội dung chuẩn bị commit.
+
+- Nhánh: <https://github.com/DuongDuc207/QUAN_LY_QUAN_CA_PHE/tree/copilot/project-workspace-sync>
+- Nhánh `main` được giữ nguyên.
+- Có thể mở pull request tại:
+  <https://github.com/DuongDuc207/QUAN_LY_QUAN_CA_PHE/compare/main...copilot/project-workspace-sync>
