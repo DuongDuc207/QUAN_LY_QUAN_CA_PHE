@@ -5,6 +5,7 @@ from bootstrap import ensure_runtime
 
 ensure_runtime(allow_reexec=__name__ == "__main__")
 
+import pyodbc
 from flask import Flask
 from flask.json.provider import DefaultJSONProvider
 
@@ -37,6 +38,13 @@ def create_app():
     app.json = JSONProvider(app)
 
     register_blueprints(app)
+
+    @app.errorhandler(pyodbc.Error)
+    def database_error(error):
+        from api.response import fail
+
+        app.logger.error("SQL Server error", exc_info=error)
+        return fail("Co so du lieu chua san sang", 503)
 
     @app.get("/")
     def index():

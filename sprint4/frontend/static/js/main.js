@@ -232,6 +232,7 @@ function thongBaoDangNhap(status, raw) {
   }
   if (status === 400) return "Vui lòng nhập đầy đủ email và mật khẩu.";
   if (status === 401) return "Email hoặc mật khẩu chưa đúng.";
+  if (status === 503) return "Hệ thống đang tạm gián đoạn. Vui lòng thử lại sau.";
   return "Chưa đăng nhập được. Vui lòng thử lại.";
 }
 

@@ -36,12 +36,13 @@ def _require_perm(session, ten_quyen):
 
 # ---------- Auth ----------
 def dang_nhap(email, password):
+    email = email.strip().lower()
     with get_connection() as conn:
         cur = conn.cursor()
         cur.execute(
             "SELECT t.*, v.TenVaiTro FROM dbo.TaiKhoan t "
             "JOIN dbo.VaiTro v ON v.VaiTroID = t.VaiTroID "
-            "WHERE t.Email = ?",
+            "WHERE LOWER(t.Email) = ?",
             (email,),
         )
         row = fetch_one(cur)
@@ -49,7 +50,11 @@ def dang_nhap(email, password):
             return None, "Email hoac mat khau khong dung"
         if row["TrangThai"] != "HOAT_DONG":
             return None, "Tai khoan da bi khoa"
-        if not check_password_hash(row["MatKhauHash"], password):
+        try:
+            password_ok = check_password_hash(row["MatKhauHash"] or "", password)
+        except (ValueError, TypeError):
+            password_ok = False
+        if not password_ok:
             return None, "Email hoac mat khau khong dung"
         quyens = _quyen_cua_vai_tro(cur, row["VaiTroID"])
         return _tai_khoan_dict(row, quyens), None

@@ -22,7 +22,7 @@ def get_connection():
             f"DRIVER={{{DB_DRIVER}}};SERVER={DB_SERVER};DATABASE={DB_NAME};"
             f"UID={DB_USER};PWD={DB_PASSWORD};"
         )
-    return pyodbc.connect(conn_str)
+    return pyodbc.connect(conn_str, timeout=5)
 
 
 def fetch_all(cursor):

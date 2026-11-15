@@ -22,6 +22,14 @@ Bien moi truong da dat trong terminal duoc uu tien hon `.env`.
 Cau hinh SQL Server trong `.env` va nap schema theo huong dan duoi day neu chua co CSDL.
 Neu muon tach du lieu, moi sprint can `DB_NAME` va CSDL da khoi tao tuong ung.
 
+Neu bam dang nhap khong vao duoc, kiem tra `DB_SERVER` trong `sprint4/.env`
+co dung ten instance SQL Server dang chay tren may hay khong. Vi du, dich vu
+`SQL Server (SQLEXPRESS)` tuong ung voi `DB_SERVER=localhost\SQLEXPRESS`;
+chi dung `localhost\SQL2022EXP` neu may co instance `SQL2022EXP`.
+Khoi dong lai ung dung sau khi sua `.env`. File nay la cau hinh rieng cua may,
+khong commit len GitHub. Trang dang nhap hien thong bao khi ket noi bi loi
+va cho phep thu lai, thay vi dung im khi may chu tra ve trang loi.
+
 ## Cai dat
 ```bat
 cd sprint4
