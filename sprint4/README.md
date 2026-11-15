@@ -120,6 +120,9 @@ Ten hien thi voi khach hang: **Ca Phe Viet**. Giao dien phu du 21 API Sprint 1
   (them 6 quyen moi). Cac script bo qua bang da co, khong xoa du lieu cu.
 - Khuyen mai ap vao don ngay khi tao don: gui `ma_khuyen_mai` trong `POST /orders`
   hoac `PUT /orders/{id}/items` (gui chuoi rong = go ma, khong gui = giu ma dang gan).
+  Hai bang trong `database/update_01_promotions.sql` la bat buoc cho ca don khong
+  dung ma giam gia. Neu CSDL moi co Sprint 3, phai nap script cap nhat nay truoc
+  khi ban hang bang Sprint 4; script tao bang con thieu va giu nguyen don hang cu.
   So tien giam luon tinh o backend tu tong tien trong CSDL, lam tron toi dong,
   khong bao gio giam qua tong tien va khong qua `GiamToiDa`.
 - Doi mon lam tong tien doi -> so giam tinh lai; don tut xuong duoi muc toi thieu thi

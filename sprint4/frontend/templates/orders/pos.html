@@ -2,6 +2,7 @@
 {% block title %}Bán hàng - Cà Phê Việt{% endblock %}
 {% block head %}
 <link rel="stylesheet" href="{{ url_for('static', filename='css/sprint4.css', v=1) }}">
+<link rel="stylesheet" href="{{ url_for('static', filename='css/thuc_don.css', v=1) }}">
 {% endblock %}
 {% block content %}
 {% set co_thu_tien = 'payment.manage' in (user.quyens or []) %}
@@ -20,14 +21,17 @@
 
 <div class="pos">
   <section aria-label="Thực đơn">
-    <div class="toolbar">
+    <div class="toolbar catalog-toolbar">
       <div class="search-box">
         <span class="search-icon">🔍</span>
         <input id="search-input" type="search" placeholder="Tìm món (gõ không dấu cũng được)" aria-label="Tìm món">
       </div>
+      <select id="filter-group" class="filter-select" aria-label="Lọc theo nhóm">
+        <option value="">Tất cả nhóm</option>
+      </select>
     </div>
-    <div class="chip-filter" id="group-chips" role="group" aria-label="Lọc theo nhóm món"></div>
-    <div class="menu-grid" id="menu-grid"><p class="muted">Đang tải thực đơn...</p></div>
+    <p id="menu-count" class="muted catalog-count" aria-live="polite"></p>
+    <div class="menu-grid catalog-grid" id="menu-grid"><p class="muted">Đang tải thực đơn...</p></div>
   </section>
 
   <aside class="pos-cart" aria-label="Đơn đang chọn">
@@ -67,9 +71,10 @@
 
 {% block scripts %}
 <script src="{{ url_for('static', filename='js/orders.js', v=5) }}"></script>
+<script src="{{ url_for('static', filename='js/thuc_don.js', v=1) }}"></script>
 <script>
   const grid = document.getElementById("menu-grid");
-  const chips = document.getElementById("group-chips");
+  const filterGroup = document.getElementById("filter-group");
   const cartList = document.getElementById("cart-list");
   const cartError = document.getElementById("cart-error");
   const searchInput = document.getElementById("search-input");
@@ -81,18 +86,21 @@
   let nhomChon = "";
   let gio = [];   // {key, mon_id, ten, gia, so_luong, ghi_chu, moGhiChu}
   let dem = 0;
+  let lanTaiMenu = 0;
 
   /* ===== Thuc don ===== */
   function veNhom() {
     const nhom = new Map();
     dsMon.forEach((m) => nhom.set(String(m.DanhMucID), m.TenDanhMuc));
-    if (nhom.size < 2) { chips.innerHTML = ""; return; }
-    chips.innerHTML = [["", "Tất cả"], ...nhom].map(([id, ten]) =>
-      `<button type="button" class="chip" data-nhom="${id}" aria-pressed="${id === nhomChon}">${escapeHtml(ten)}</button>`).join("");
+    if (!nhom.has(nhomChon)) nhomChon = "";
+    filterGroup.innerHTML = [["", "Tất cả nhóm"], ...nhom].map(([id, ten]) =>
+      `<option value="${id}">${escapeHtml(ten)}</option>`).join("");
+    filterGroup.value = nhomChon;
   }
 
   function veMenu() {
     if (!dsMon.length) {
+      document.getElementById("menu-count").textContent = "0 món đang bán";
       grid.innerHTML = `<div class="card" style="grid-column:1/-1">
         <span class="card-icon">📋</span>
         <h3>Chưa có món nào đang bán</h3>
@@ -101,9 +109,8 @@
       </div>`;
       return;
     }
-    const q = boDau(searchInput.value.trim());
-    const rows = dsMon.filter((m) =>
-      (!nhomChon || String(m.DanhMucID) === nhomChon) && (!q || boDau(m.TenMon).includes(q)));
+    const rows = ThucDon.loc(dsMon, searchInput.value, nhomChon, "dang-ban");
+    document.getElementById("menu-count").textContent = `${rows.length.toLocaleString("vi-VN")} món đang bán`;
     if (!rows.length) {
       grid.innerHTML = `<p class="muted" style="grid-column:1/-1">Không tìm thấy món phù hợp.</p>`;
       return;
@@ -111,32 +118,41 @@
     const daChon = {};
     gio.forEach((g) => { daChon[g.mon_id] = (daChon[g.mon_id] || 0) + g.so_luong; });
     grid.innerHTML = rows.map((m) => `
-      <button type="button" class="menu-tile" data-mon="${m.MonID}"
+      <button type="button" class="menu-tile catalog-tile" data-mon="${m.MonID}"
               aria-label="Thêm ${escapeHtml(m.TenMon)}, giá ${dinhDangGia(m.GiaBan)}${daChon[m.MonID] ? ", đã chọn " + daChon[m.MonID] : ""}">
         ${daChon[m.MonID] ? `<span class="tile-count" aria-hidden="true">${daChon[m.MonID]}</span>` : ""}
-        <span><span class="tile-name">${escapeHtml(m.TenMon)}</span><br>
-          <span class="tile-group">${escapeHtml(m.TenDanhMuc || "")}</span></span>
-        <span class="tile-price">${dinhDangGia(m.GiaBan)}</span>
+        ${ThucDon.noiDungThe(m)}
       </button>`).join("");
   }
 
   async function loadMenu() {
-    const r = await apiGoi("GET", "/api/v1/menu?dang_ban=1&per_page=100");
+    const lan = ++lanTaiMenu;
+    const r = await ThucDon.taiTatCa(true);
+    if (lan !== lanTaiMenu) return;
     if (!r.ok) {
       if (kiemTraHetPhien(r.status)) return;
       const err = document.getElementById("page-error");
       err.textContent = thongBaoLoi(r.status, "thực đơn");
       err.classList.remove("hidden");
       grid.innerHTML = "";
+      document.getElementById("menu-count").textContent = "";
       return;
     }
-    dsMon = (r.data.items || []).slice().sort((a, b) =>
-      String(a.TenDanhMuc).localeCompare(String(b.TenDanhMuc), "vi") || String(a.TenMon).localeCompare(String(b.TenMon), "vi"));
+    document.getElementById("page-error").classList.add("hidden");
+    dsMon = r.data;
     // Mon trong gio da ngung ban thi bo ra, tranh tao don loi.
     const conBan = new Set(dsMon.map((m) => m.MonID));
     const truoc = gio.length;
     gio = gio.filter((g) => conBan.has(g.mon_id));
     if (gio.length < truoc) hienToast("Có món vừa ngừng bán nên đã được bỏ khỏi đơn.");
+    let doiGia = false;
+    gio.forEach(g => {
+      const m = dsMon.find(m => m.MonID === g.mon_id);
+      if (g.gia !== Number(m.GiaBan)) doiGia = true;
+      g.ten = m.TenMon;
+      g.gia = Number(m.GiaBan);
+    });
+    if (doiGia) hienToast("Giá món vừa được cập nhật. Vui lòng kiểm tra lại tổng tiền.");
     veNhom();
     veMenu();
     veGio();
@@ -302,16 +318,14 @@
     const b = e.target.closest("button[data-mon]");
     if (b) themMon(b.dataset.mon);
   });
-  chips.addEventListener("click", (e) => {
-    const b = e.target.closest("button[data-nhom]");
-    if (!b) return;
-    nhomChon = b.dataset.nhom;
-    veNhom();
+  filterGroup.addEventListener("change", () => {
+    nhomChon = filterGroup.value;
     veMenu();
   });
   searchInput.addEventListener("input", veMenu);
   if (btnCreate) btnCreate.addEventListener("click", () => taoDon(false));
   if (btnCreatePay) btnCreatePay.addEventListener("click", () => taoDon(true));
+  ThucDon.theoDoiThayDoi(loadMenu);
 
   veGio();
   loadMenu();

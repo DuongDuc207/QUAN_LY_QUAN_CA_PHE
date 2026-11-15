@@ -84,7 +84,7 @@ def xoa_danh_muc(danh_muc_id):
 
 # ---------- Mon ----------
 MON_SELECT = (
-    "SELECT m.*, d.TenDanhMuc FROM dbo.Mon m "
+    "SELECT m.*, d.TenDanhMuc, d.TrangThai AS DanhMucHienThi FROM dbo.Mon m "
     "JOIN dbo.DanhMuc d ON d.DanhMucID = m.DanhMucID"
 )
 

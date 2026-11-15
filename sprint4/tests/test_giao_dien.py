@@ -220,10 +220,11 @@ def test_giao_dien_dung_du_api():
         if p.suffix in (".html", ".js"):
             source += p.read_text(encoding="utf-8")
 
-    # /auth/me la API nen (xac thuc phien), khong can nut rieng tren giao dien.
+    # /auth/me la API nen. /menu/search giu cho client cu; giao dien moi tim
+    # khong dau tren danh sach day du dung chung voi trang Ban hang.
     chua_dung = []
     for method, rule in sorted(api):
-        if rule == "/auth/me":
+        if rule in ("/auth/me", "/menu/search"):
             continue
         # Doi tham so duong dan thanh mau bat ky de khop voi `${id}` trong JS.
         mau = re.escape(rule).replace(r"<int:", "<").replace("\\<", "<")

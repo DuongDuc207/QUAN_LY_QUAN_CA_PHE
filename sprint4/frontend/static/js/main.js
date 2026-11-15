@@ -205,6 +205,7 @@ const DIEN_GIAI_LOI_RIENG = [];
 
 /** Doi thong bao he thong sang cau than thien; khong in nguyen van. */
 function dienGiaiLoi(raw, status) {
+  if (status >= 500) return "Hệ thống đang tạm gián đoạn. Vui lòng thử lại sau.";
   const text = (raw || "").toLowerCase();
   for (const [dauHieu, cau] of DIEN_GIAI_LOI_RIENG.concat(DIEN_GIAI_LOI)) {
     if (text.includes(dauHieu)) return cau;
