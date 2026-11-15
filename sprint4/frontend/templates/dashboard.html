@@ -1,5 +1,8 @@
 {% extends "layout.html" %}
 {% block title %}Trang chủ - Cà Phê Việt{% endblock %}
+{% block head %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/dashboard.css', v=1) }}">
+{% endblock %}
 {% block content %}
 <div class="page-head">
   <h2>Xin chào{% if user and user.ho_ten %}, {{ user.ho_ten }}{% endif %}</h2>
@@ -33,6 +36,18 @@
     <span class="stat-foot"><span data-total>–</span> đơn đã thu tiền</span>
   </div>
 </div>
+
+<section class="drink-showcase" aria-labelledby="drink-showcase-title">
+  <div class="drink-showcase-head">
+    <h3 id="drink-showcase-title">Đồ uống Cà Phê Việt</h3>
+    <a href="{{ url_for('static', filename='images/do-uong-ca-phe-viet.png') }}" target="_blank" rel="noopener">Xem ảnh đầy đủ <span class="small">(mở tab mới)</span></a>
+  </div>
+  <a class="drink-showcase-image" href="{{ url_for('static', filename='images/do-uong-ca-phe-viet.png') }}" target="_blank" rel="noopener" aria-label="Xem bộ ảnh đồ uống Cà Phê Việt trong tab mới">
+    <img src="{{ url_for('static', filename='images/do-uong-ca-phe-viet.png') }}"
+         alt="Bộ ảnh đồ uống Cà Phê Việt gồm cà phê, cacao, matcha, nước ép, sinh tố, soda, sữa chua và các loại trà."
+         width="1024" height="1536" decoding="async">
+  </a>
+</section>
 
 <h3 class="section-title">Lối tắt</h3>
 <div class="cards">
