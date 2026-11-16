@@ -117,6 +117,9 @@ const DonHang = (() => {
     </div>`;
     if (don.LyDoHuy) html += `<div class="note-box danger">Lý do huỷ: ${escapeHtml(don.LyDoHuy)}</div>`;
     if (don.GhiChu) html += `<div class="note-box">Ghi chú: ${escapeHtml(don.GhiChu)}</div>`;
+    if (donConMo(don) && !duocPhaChe(don)) {
+      html += `<div class="note-box">Cần xác nhận thanh toán tại quầy trước khi pha chế và phục vụ.</div>`;
+    }
 
     html += `<table class="line-table">
       <thead><tr><th>Món</th><th class="col-num">SL</th><th class="col-num">Thành tiền</th>${suaDuoc ? "<th></th>" : ""}</tr></thead>
@@ -151,7 +154,7 @@ const DonHang = (() => {
     $("order-body").innerHTML = html;
 
     // Nut cuoi hop thoai
-    const coThuTien = coQuyen("payment.manage") && chuaThuTien(don) && !donDaHuy(don) && Number(don.ThanhTien) > 0;
+    const coThuTien = coQuyen("payment.manage") && chuaThuTien(don) && !donDaHuy(don) && Number(don.ThanhTien) >= 0;
     const nut = [];
     if (coQuyen("order.cancel") && donConMo(don)) {
       nut.push(`<button type="button" class="btn-outline" data-hanh-dong="huy">Huỷ đơn</button>`);
@@ -160,7 +163,7 @@ const DonHang = (() => {
     if (daCoHoaDon(don)) {
       nut.push(`<button type="button" class="btn-outline" data-hanh-dong="hoa-don">Xem hoá đơn</button>`);
     }
-    const buoc = buocTiepDon(don.TrangThai);
+    const buoc = buocTiepDon(don);
     if (buoc && coQuyen("order.manage")) {
       nut.push(`<button type="button" class="${coThuTien ? "btn-outline" : ""}" data-hanh-dong="buoc">${escapeHtml(buoc.nut)}</button>`);
     }
@@ -171,12 +174,11 @@ const DonHang = (() => {
   }
 
   async function chuyenBuoc(donHang) {
-    const buoc = buocTiepDon(donHang.TrangThai);
-    if (!buoc) return null;
-    const laBuocCuoi = !buocTiepDon(buoc.ma);
-    if (laBuocCuoi && chuaThuTien(donHang)
-        && !(await xacNhan(`Đơn ${donHang.MaDonHang} chưa thu tiền. Vẫn đánh dấu hoàn thành?`,
-          {nhanDongY: "Vẫn hoàn thành"}))) return null;
+    const buoc = buocTiepDon(donHang);
+    if (!buoc) {
+      if (!duocPhaChe(donHang)) hienToast("Vui lòng xác nhận thanh toán tại quầy trước khi pha chế và phục vụ.");
+      return null;
+    }
     const r = await apiGoi("PATCH", `/api/v1/orders/${donHang.DonHangID}/status`, {trang_thai: buoc.ma});
     if (r.ok) hienToast(`Đơn ${donHang.MaDonHang}: ${nhanTinhTrangDon(buoc.ma)}.`);
     return r;
@@ -365,7 +367,7 @@ const DonHang = (() => {
       return;
     }
     dongModal("modal-pay");
-    hienToast("Đã thu tiền. Hoá đơn đã được lập.");
+    hienToast("Đã xác nhận thanh toán. Hoá đơn đã lập, đơn mới đã chuyển sang chờ pha chế.");
     await taiLaiDon(don.DonHangID);
     khiThayDoi();
     if (r2.data.HoaDon) xemHoaDon(r2.data.HoaDon.HoaDonID);

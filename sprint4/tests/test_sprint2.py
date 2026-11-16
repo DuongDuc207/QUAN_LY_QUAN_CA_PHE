@@ -178,7 +178,10 @@ def test_trang_thai_chi_di_tung_buoc(client):
     assert r.status_code == 400
     assert client.patch(f"/api/v1/orders/{did}/status", json={"trang_thai": "XYZ"}).status_code == 400
 
-    for tt in ("CHO_PHA_CHE", "DANG_PHA_CHE"):
+    assert client.patch(f"/api/v1/orders/{did}/status", json={"trang_thai": "CHO_PHA_CHE"}).status_code == 409
+    thu_tien(client, don)
+    assert client.get(f"/api/v1/orders/{did}").get_json()["data"]["TrangThai"] == "CHO_PHA_CHE"
+    for tt in ("DANG_PHA_CHE",):
         r = client.patch(f"/api/v1/orders/{did}/status", json={"trang_thai": tt})
         assert r.status_code == 200 and r.get_json()["data"]["TrangThai"] == tt
     # Dang pha che -> khong sua mon
@@ -435,8 +438,7 @@ def test_quy_trinh_ban_hang_tron_ven(client):
     # Vi du tai lieu: 2 x A + 1 x B
     don = tao_don(client)
     did = don["DonHangID"]
-    client.patch(f"/api/v1/orders/{did}/status", json={"trang_thai": "CHO_PHA_CHE"})
-    # Cho pha che van con sua duoc mon
+    # Chot mon khi don dang cho thanh toan tai quay.
     r = client.post(f"/api/v1/orders/{did}/items", json={"mon_id": dl.MON2_ID, "so_luong": 1})
     assert float(r.get_json()["data"]["ThanhTien"]) == 70000
     kq = thu_tien(client, r.get_json()["data"])

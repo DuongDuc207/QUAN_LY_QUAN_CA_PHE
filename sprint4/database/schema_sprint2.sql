@@ -90,7 +90,7 @@ CREATE TABLE dbo.ThanhToan (
     NgayTao DATETIME2 NOT NULL CONSTRAINT DF_ThanhToan_NgayTao DEFAULT SYSDATETIME(),
     CONSTRAINT PK_ThanhToan PRIMARY KEY (ThanhToanID),
     CONSTRAINT CK_ThanhToan_PhuongThuc CHECK (PhuongThuc IN ('TIEN_MAT', 'CHUYEN_KHOAN', 'THE')),
-    CONSTRAINT CK_ThanhToan_SoTien CHECK (SoTien > 0),
+    CONSTRAINT CK_ThanhToan_SoTien CHECK (SoTien >= 0),
     CONSTRAINT CK_ThanhToan_TrangThai CHECK (TrangThai IN ('CHO_XAC_NHAN', 'THANH_CONG', 'THAT_BAI', 'HOAN_MOT_PHAN', 'DA_HOAN_TIEN')),
     CONSTRAINT FK_ThanhToan_DonHang FOREIGN KEY (DonHangID) REFERENCES dbo.DonHang(DonHangID)
 );

@@ -436,6 +436,9 @@ def doi_trang_thai_don(don_hang_id, trang_thai):
         if BUOC_TIEP.get(don["TrangThai"]) != trang_thai:
             conn.rollback()
             return loi("Khong the chuyen don sang trang thai nay", 409)
+        if don["TrangThaiThanhToan"] != "THANH_CONG":
+            conn.rollback()
+            return loi("Can thanh toan thanh cong truoc khi pha che va phuc vu", 409)
         cur.execute(
             "UPDATE dbo.DonHang SET TrangThai = ?, NgayCapNhat = SYSDATETIME() WHERE DonHangID = ?",
             (trang_thai, don_hang_id),
@@ -469,7 +472,7 @@ def huy_don(don_hang_id, ly_do, hoan_tien=False, duoc_hoan_tien=False):
             conn.rollback()
             return loi("Don da hoan thanh, khong the huy. Neu khach tra lai hay dung hoan tien", 409)
 
-        if don["TrangThaiThanhToan"] in ("THANH_CONG", "HOAN_MOT_PHAN"):
+        if don["TrangThaiThanhToan"] in ("THANH_CONG", "HOAN_MOT_PHAN") and Decimal(don["ThanhTien"]) > 0:
             if not hoan_tien:
                 conn.rollback()
                 return loi("Don da thu tien, can hoan tien cho khach truoc khi huy", 409)

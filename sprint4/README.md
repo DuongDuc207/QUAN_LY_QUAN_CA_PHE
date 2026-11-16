@@ -34,12 +34,13 @@ va cho phep thu lai, thay vi dung im khi may chu tra ve trang loi.
 ```bat
 cd sprint4
 if not exist .env copy .env.example .env
-sqlcmd -S "localhost\SQL2022EXP" -E -d QuanLyCaPhe -i database\schema.sql -b
-sqlcmd -S "localhost\SQL2022EXP" -E -d QuanLyCaPhe -i database\schema_sprint2.sql -b -f 65001
-sqlcmd -S "localhost\SQL2022EXP" -E -d QuanLyCaPhe -i database\schema_sprint3.sql -b -f 65001
-sqlcmd -S "localhost\SQL2022EXP" -E -d QuanLyCaPhe -i database\update_01_promotions.sql -b -f 65001
-sqlcmd -S "localhost\SQL2022EXP" -E -d QuanLyCaPhe -i database\update_02_staff_schedule.sql -b -f 65001
-sqlcmd -S "localhost\SQL2022EXP" -E -d QuanLyCaPhe -i database\seed.sql -b -f 65001
+sqlcmd -S "localhost\SQLEXPRESS" -E -d QuanLyCaPhe -i database\schema.sql -b
+sqlcmd -S "localhost\SQLEXPRESS" -E -d QuanLyCaPhe -i database\schema_sprint2.sql -b -f 65001
+sqlcmd -S "localhost\SQLEXPRESS" -E -d QuanLyCaPhe -i database\schema_sprint3.sql -b -f 65001
+sqlcmd -S "localhost\SQLEXPRESS" -E -d QuanLyCaPhe -i database\update_01_promotions.sql -b -f 65001
+sqlcmd -S "localhost\SQLEXPRESS" -E -d QuanLyCaPhe -i database\update_02_staff_schedule.sql -b -f 65001
+sqlcmd -S "localhost\SQLEXPRESS" -E -d QuanLyCaPhe -i database\update_03_counter_checkout.sql -b -f 65001
+sqlcmd -S "localhost\SQLEXPRESS" -E -d QuanLyCaPhe -i database\seed.sql -b -f 65001
 py tao_tai_khoan.py
 py app.py
 ```
@@ -58,13 +59,31 @@ py tao_tai_khoan.py --danh-sach  :: xem cac tai khoan hien co
 ```
 
 CSDL da cai ban cu con du lieu mau thi chay 1 lan:
-`sqlcmd -S "localhost\SQL2022EXP" -E -d QuanLyCaPhe -i database\xoa_du_lieu_mau.sql -b -f 65001`
+`sqlcmd -S "localhost\SQLEXPRESS" -E -d QuanLyCaPhe -i database\xoa_du_lieu_mau.sql -b -f 65001`
 
 Mo trinh duyet: http://localhost:5004 (tu dong ve `/dashboard`, chua login thi ve `/login`).
 
 ## Giao dien nguoi dung
 Ten hien thi voi khach hang: **Ca Phe Viet**. Giao dien phu du 21 API Sprint 1
 (`/auth/me` dung ngam de xac thuc phien, khong co nut rieng).
+
+## Quy trinh phuc vu tai quay
+
+Khach hang goi mon va thanh toan tai quay truoc khi quan pha che, phuc vu do uong.
+Don moi (`MOI`) la don cho thanh toan, chua duoc gui pha che. Xac nhan thanh toan
+thanh cong moi lap hoa don va tu chuyen don moi sang `CHO_PHA_CHE` trong cung
+giao dich; tao giao dich cho xac nhan, thanh toan that bai hoac hoan tien khong
+mo quyen pha che. Sau do moi `DANG_PHA_CHE` va `HOAN_THANH` (da phuc vu).
+Ca API va giao dien deu chan chuyen buoc neu chua thanh toan thanh cong.
+
+Tai quay chi co nut tao don va thanh toan; dong hop thoai thu tien thi don van
+cho thanh toan, chua dua vao hang doi pha che. Nhan vien khong co quyen thu tien
+chi duoc ghi nhan goi mon de thu ngan thanh toan. Don duoc giam ve 0 dong van
+can thu ngan xac nhan va duoc lap hoa don truoc khi pha che.
+
+CSDL Sprint 4 da co san: chay them `database/update_03_counter_checkout.sql`
+(dung `DB_SERVER` va `DB_NAME` cua may). Script chi cap nhat rang buoc so tien,
+giu nguyen du lieu va cho phep chay lai.
 
 | Trang | Chuc nang |
 |---|---|
@@ -74,7 +93,7 @@ Ten hien thi voi khach hang: **Ca Phe Viet**. Giao dien phu du 21 API Sprint 1
 | `/menu` tab Mon | Xem, tim, loc theo nhom, them, chi tiet, sua gia, ngung/ban lai |
 | `/menu` tab Nhom mon | Xem, them, sua, an/hien, xoa |
 | `/roles` | Phan quyen theo vi tri cong viec |
-| `/pos` | Ban hang: chon mon, ghi chu, tao don, thu tien (tien mat / chuyen khoan / the) |
+| `/pos` | Goi mon va thanh toan tai quay (tien mat / chuyen khoan / the) truoc khi pha che |
 | `/orders` | Don hang: loc theo ngay/tinh trang, chuyen buoc pha che, sua mon, huy, hoan tien, xem/in hoa don |
 
 ## Sprint 2 - Don hang & thanh toan (17 API)
@@ -83,7 +102,8 @@ Ten hien thi voi khach hang: **Ca Phe Viet**. Giao dien phu du 21 API Sprint 1
   roi chay lai `seed.sql` (them 5 quyen moi; gan quyen cac vi tri ve mac dinh).
 - Tien tinh o backend tu gia trong CSDL; gia duoc chot vao don luc them mon.
 - Trang thai don (`MOI -> CHO_PHA_CHE -> DANG_PHA_CHE -> HOAN_THANH`, hoac `DA_HUY`)
-  tach rieng trang thai thanh toan. Chi sua mon khi don chua pha che va chua thu tien.
+  tach rieng trang thai thanh toan. Don moi cho thanh toan; thu tien thanh cong tu
+  chuyen sang cho pha che. Chi sua mon khi don chua pha che va chua thu tien.
 - Chong thanh toan trung: khoa dong don khi ghi + index loc
   `UQ_ThanhToan_DonHang_HieuLuc` (moi don toi da 1 giao dich chua that bai).
 - Xac nhan thanh toan thanh cong moi lap hoa don. Chuyen khoan / the phai co ma giao dich.

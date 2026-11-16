@@ -4,7 +4,7 @@
 <div class="page-head pos-head">
   <div>
     <h2>Đơn hàng</h2>
-    <p class="muted">Theo dõi đơn đang pha chế, thu tiền và xem lại hoá đơn.</p>
+    <p class="muted">Thanh toán tại quầy, pha chế rồi phục vụ đồ uống.</p>
   </div>
   {% if 'order.manage' in (user.quyens or []) %}
     <a class="btn" href="/pos">+ Đơn mới</a>
@@ -54,7 +54,7 @@
 {% endblock %}
 
 {% block scripts %}
-<script src="{{ url_for('static', filename='js/orders.js', v=5) }}"></script>
+<script src="{{ url_for('static', filename='js/orders.js', v=6) }}"></script>
 <script>
   const SO_DONG = 20;
   const tbody = document.querySelector("#orders-table tbody");
@@ -79,7 +79,7 @@
       return;
     }
     tbody.innerHTML = rows.map((d) => {
-      const buoc = buocTiepDon(d.TrangThai);
+      const buoc = buocTiepDon(d);
       const nutBuoc = buoc && DonHang.coQuyen("order.manage")
         ? `<button type="button" class="btn-icon" data-buoc="${d.DonHangID}">${escapeHtml(buoc.nut)}</button>` : "";
       return `<tr>

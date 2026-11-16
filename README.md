@@ -19,6 +19,18 @@ cài đặt hay khởi động phiên bản trước.
 `sprint4` là phiên bản đầy đủ tính năng nhất. README trong từng thư mục có hướng
 dẫn chi tiết cho ứng dụng tương ứng.
 
+## Quy trình phục vụ tại quầy (Sprint 4)
+
+Khách hàng gọi món và thanh toán tại quầy trước khi quán pha chế, phục vụ đồ uống.
+Đơn mới ở trạng thái chờ thanh toán. Khi thu ngân xác nhận thanh toán thành công,
+hệ thống lập hóa đơn và chuyển đơn sang chờ pha chế trong cùng giao dịch.
+Nhân viên bắt đầu pha chế, sau đó xác nhận đã phục vụ đồ uống. API và giao diện
+đều chặn pha chế hoặc hoàn thành đơn khi chưa thanh toán thành công.
+
+Với CSDL đã có Sprint 4, chạy thêm `sprint4/database/update_03_counter_checkout.sql`
+để hỗ trợ thu ngân xác nhận đơn có tổng tiền 0 đồng sau khuyến mãi. Script giữ
+nguyên dữ liệu hiện có. Các phiên bản sprint trước giữ nguyên quy trình cũ.
+
 ## Công nghệ
 
 - Python 3.12
@@ -36,6 +48,10 @@ dẫn chi tiết cho ứng dụng tương ứng.
   phiên bản đang chạy.
 
 ## Cài đặt và chạy Sprint 4
+
+Để chạy đúng bản trong dự án, mở `chay_sprint4.cmd` ở thư mục gốc. File này luôn
+chuyển vào thư mục `sprint4` cạnh nó trước khi chạy, kể cả khi mở từ nơi khác.
+Địa chỉ mặc định là <http://localhost:5004>. Tránh mở nhầm bản sao cũ trong Downloads.
 
 Từ thư mục gốc dự án, mở PowerShell:
 
@@ -59,12 +75,13 @@ không dùng chung khóa giữa môi trường phát triển và triển khai.
 Nếu cần tạo cơ sở dữ liệu mới, chạy lần lượt các script sau trong thư mục `sprint4`:
 
 ```powershell
-sqlcmd -S "localhost\SQL2022EXP" -E -d QuanLyCaPhe -i database\schema.sql -b
-sqlcmd -S "localhost\SQL2022EXP" -E -d QuanLyCaPhe -i database\schema_sprint2.sql -b -f 65001
-sqlcmd -S "localhost\SQL2022EXP" -E -d QuanLyCaPhe -i database\schema_sprint3.sql -b -f 65001
-sqlcmd -S "localhost\SQL2022EXP" -E -d QuanLyCaPhe -i database\update_01_promotions.sql -b -f 65001
-sqlcmd -S "localhost\SQL2022EXP" -E -d QuanLyCaPhe -i database\update_02_staff_schedule.sql -b -f 65001
-sqlcmd -S "localhost\SQL2022EXP" -E -d QuanLyCaPhe -i database\seed.sql -b -f 65001
+sqlcmd -S "localhost\SQLEXPRESS" -E -d QuanLyCaPhe -i database\schema.sql -b
+sqlcmd -S "localhost\SQLEXPRESS" -E -d QuanLyCaPhe -i database\schema_sprint2.sql -b -f 65001
+sqlcmd -S "localhost\SQLEXPRESS" -E -d QuanLyCaPhe -i database\schema_sprint3.sql -b -f 65001
+sqlcmd -S "localhost\SQLEXPRESS" -E -d QuanLyCaPhe -i database\update_01_promotions.sql -b -f 65001
+sqlcmd -S "localhost\SQLEXPRESS" -E -d QuanLyCaPhe -i database\update_02_staff_schedule.sql -b -f 65001
+sqlcmd -S "localhost\SQLEXPRESS" -E -d QuanLyCaPhe -i database\update_03_counter_checkout.sql -b -f 65001
+sqlcmd -S "localhost\SQLEXPRESS" -E -d QuanLyCaPhe -i database\seed.sql -b -f 65001
 py tao_tai_khoan.py
 py app.py
 ```

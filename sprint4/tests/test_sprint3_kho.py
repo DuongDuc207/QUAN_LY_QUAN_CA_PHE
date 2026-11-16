@@ -130,10 +130,18 @@ def tao_don(c, items):
     return data(r)
 
 
+def thanh_toan_don(c, don):
+    r = c.post(f"{API}/payments", json={"don_hang_id": don["DonHangID"], "phuong_thuc": "TIEN_MAT"})
+    assert r.status_code == 201, r.get_json()
+    r = c.post(f"{API}/payments/{data(r)['ThanhToanID']}/confirm", json={})
+    assert r.status_code == 200, r.get_json()
+
+
 def don_pha_che(c, items=None, den="DANG_PHA_CHE"):
     don = tao_don(c, items or [{"mon_id": dl.MON_ID, "so_luong": 1}])
+    thanh_toan_don(c, don)
     buoc = ["CHO_PHA_CHE", "DANG_PHA_CHE", "HOAN_THANH"]
-    for tt in buoc[: buoc.index(den) + 1]:
+    for tt in buoc[1: buoc.index(den) + 1]:
         r = c.patch(f"{API}/orders/{don['DonHangID']}/status", json={"trang_thai": tt})
         assert r.status_code == 200, r.get_json()
     return don
@@ -924,13 +932,13 @@ def test_tru_kho_don_chua_pha_che_hoac_da_huy_bi_chan():
     moi = tao_don(c, [{"mon_id": dl.MON_ID, "so_luong": 1}])
     r = tru_kho(c, moi["DonHangID"])
     assert r.status_code == 409, r.get_json()
-    c.patch(f"{API}/orders/{moi['DonHangID']}/status", json={"trang_thai": "CHO_PHA_CHE"})
+    thanh_toan_don(c, moi)
     assert tru_kho(c, moi["DonHangID"]).status_code == 409
 
     huy = tao_don(c, [{"mon_id": dl.MON_ID, "so_luong": 1}])
-    c.patch(f"{API}/orders/{huy['DonHangID']}/status", json={"trang_thai": "CHO_PHA_CHE"})
-    c.patch(f"{API}/orders/{huy['DonHangID']}/status", json={"trang_thai": "DANG_PHA_CHE"})
-    assert c.post(f"{API}/orders/{huy['DonHangID']}/cancel", json={"ly_do": "Khach bo"}).status_code == 200
+    thanh_toan_don(c, huy)
+    assert c.patch(f"{API}/orders/{huy['DonHangID']}/status", json={"trang_thai": "DANG_PHA_CHE"}).status_code == 200
+    assert c.post(f"{API}/orders/{huy['DonHangID']}/cancel", json={"ly_do": "Khach bo", "hoan_tien": True}).status_code == 200
     assert tru_kho(c, huy["DonHangID"]).status_code == 409
 
     assert ton_db(a["NguyenLieuID"]) == 1000 and ton_db(b["NguyenLieuID"]) == 100

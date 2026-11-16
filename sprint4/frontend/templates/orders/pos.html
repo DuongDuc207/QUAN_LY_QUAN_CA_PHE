@@ -10,7 +10,7 @@
 <div class="page-head pos-head">
   <div>
     <h2>Bán hàng</h2>
-    <p class="muted">Bấm vào món khách gọi, kiểm tra lại đơn bên phải rồi tạo đơn.</p>
+    <p class="muted">Khách gọi món và thanh toán tại quầy trước khi quán pha chế, phục vụ đồ uống.</p>
   </div>
   {% if 'order.view' in (user.quyens or []) %}
     <a class="btn btn-outline" href="/orders">Xem đơn hàng</a>
@@ -58,10 +58,10 @@
     </div>
     <div id="cart-error" class="alert error hidden" role="alert" style="margin:10px 0 0"></div>
     {% if co_thu_tien %}
-      <button type="button" class="btn-block" id="btn-create-pay" disabled>Tạo đơn &amp; thu tiền</button>
-      <button type="button" class="btn-outline btn-block" id="btn-create" style="margin-top:8px" disabled>Chỉ tạo đơn, thu sau</button>
+      <button type="button" class="btn-block" id="btn-create-pay" disabled>Tạo đơn &amp; thanh toán tại quầy</button>
     {% else %}
-      <button type="button" class="btn-block" id="btn-create" disabled>Tạo đơn</button>
+      <p class="muted small">Ghi nhận gọi món để thu ngân thanh toán trước khi pha chế.</p>
+      <button type="button" class="btn-block" id="btn-create" disabled>Ghi nhận gọi món</button>
     {% endif %}
   </aside>
 </div>
@@ -70,7 +70,7 @@
 {% endblock %}
 
 {% block scripts %}
-<script src="{{ url_for('static', filename='js/orders.js', v=5) }}"></script>
+<script src="{{ url_for('static', filename='js/orders.js', v=6) }}"></script>
 <script src="{{ url_for('static', filename='js/thuc_don.js', v=1) }}"></script>
 <script>
   const grid = document.getElementById("menu-grid");
@@ -309,7 +309,7 @@
     boMa();
     veGio();
     veMenu();
-    hienToast(`Đã tạo đơn ${r.data.MaDonHang}.`);
+    hienToast(`Đã ghi nhận đơn ${r.data.MaDonHang}, chờ thanh toán tại quầy.`);
     if (thuTien) DonHang.moVaThuTien(r.data.DonHangID);
   }
 

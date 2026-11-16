@@ -699,7 +699,7 @@ def tao_don_hang(rng, dem, ds_tk_ban_hang, ds_mon, ds_km, so_don):
         for _ in range(so_don_ngay[ngay]):
             tk_id = rng.choice(ds_tk_ban_hang)["TaiKhoanID"]
             gio = _chon_theo_trong_so(rng, ds_gio)
-            # Don hom nay: vai don con dang mo (khach dang ngoi) nen chua thu tien.
+            # Don hom nay: co don cho thanh toan va don da thu tien dang pha che.
             con_mo = la_hom_nay and rng.random() < 0.35
             items = []
             for _ in range(_chon_theo_trong_so(rng, [(1, 35), (2, 35), (3, 20), (4, 10)])):
@@ -717,25 +717,19 @@ def tao_don_hang(rng, dem, ds_tk_ban_hang, ds_mon, ds_km, so_don):
             don_id = don["DonHangID"]
 
             if con_mo:
-                # Don dang phuc vu: vai don da vao pha che (da tru kho), con lai moi tao.
+                # Chi don da thanh toan moi duoc vao pha che; con lai cho thu ngan.
                 if rng.random() < 0.3:
-                    _kq(don_service.doi_trang_thai_don(don_id, "CHO_PHA_CHE"), "chuyen trang thai")
+                    _thu_tien(rng, dem, don)
                     _kq(don_service.doi_trang_thai_don(don_id, "DANG_PHA_CHE"), "chuyen trang thai")
                     _, loi_tru = kho_service.tru_kho_theo_don(tk_id, {"don_hang_id": don_id})
                     dem_tru_kho_loi += bool(loi_tru)
                 don_can_lui_gio.append((don_id, ngay, gio, rng.randint(0, 59)))
                 continue
 
-            _kq(don_service.doi_trang_thai_don(don_id, "CHO_PHA_CHE"), "chuyen trang thai")
-            _kq(don_service.doi_trang_thai_don(don_id, "DANG_PHA_CHE"), "chuyen trang thai")
-            _, loi_tru = kho_service.tru_kho_theo_don(tk_id, {"don_hang_id": don_id})
-            dem_tru_kho_loi += bool(loi_tru)
-
             if rng.random() < 0.075:
                 dem_huy += 1
                 ly_do = rng.choice(LY_DO_HUY)
-                # Don giam het tien thi khong co gi de thu/hoan.
-                if float(don["ThanhTien"]) > 0 and rng.random() < 0.5:  # da thu tien roi moi huy
+                if rng.random() < 0.5:  # da xac nhan thanh toan roi moi huy
                     _thu_tien(rng, dem, don)
                     _kq(don_service.huy_don(don_id, ly_do, hoan_tien=True, duoc_hoan_tien=True),
                         "huy don da thu tien")
@@ -744,8 +738,11 @@ def tao_don_hang(rng, dem, ds_tk_ban_hang, ds_mon, ds_km, so_don):
                 don_can_lui_gio.append((don_id, ngay, gio, rng.randint(0, 59)))
                 continue
 
+            tt = _thu_tien(rng, dem, don)
+            _kq(don_service.doi_trang_thai_don(don_id, "DANG_PHA_CHE"), "chuyen trang thai")
+            _, loi_tru = kho_service.tru_kho_theo_don(tk_id, {"don_hang_id": don_id})
+            dem_tru_kho_loi += bool(loi_tru)
             _kq(don_service.doi_trang_thai_don(don_id, "HOAN_THANH"), "chuyen trang thai")
-            tt = _thu_tien(rng, dem, don) if float(don["ThanhTien"]) > 0 else None
 
             # Vai don bi hoan mot phan hoac hoan het vi khach phan nan.
             if tt and rng.random() < 0.012:
@@ -777,7 +774,7 @@ def _thu_tien(rng, dem, don):
 def lui_thoi_gian(don_can_lui_gio, ds_phieu):
     """Lui ngay gio cua don va phieu nhap ve qua khu de bao cao co du lieu nhieu ngay.
 
-    Cac bang lien quan lui cung mot khoang de thu tu (dat -> pha che -> thu tien -> hoan)
+    Cac bang lien quan lui cung mot khoang de thu tu (dat -> thu tien -> pha che -> hoan)
     khong bi dao lon.
     """
     print("  Lui ngay gio don hang va phieu nhap ve qua khu...")

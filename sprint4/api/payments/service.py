@@ -100,7 +100,7 @@ def tao_thanh_toan(don_hang_id, phuong_thuc, so_tien=None, ma_giao_dich=None):
             return loi("Don hang da duoc thanh toan", 409)
 
         can_thu = Decimal(don["ThanhTien"])
-        if can_thu <= 0:
+        if can_thu < 0 or not don["SoDong"]:
             conn.rollback()
             return loi("Don hang chua co mon nao de thanh toan")
         if so_tien is not None:
@@ -183,6 +183,13 @@ def xac_nhan_thanh_toan(thanh_toan_id, thanh_cong=True, ma_giao_dich=None):
             conn.rollback()
             return loi(*_dich_loi_trung(e))
         hoa_don_id = _lap_hoa_don(cur, don)
+        # Chi dua don moi vao hang doi pha che sau khi thu tien thanh cong.
+        # Cung giao dich voi thanh toan va hoa don; don cu khong bi lui trang thai.
+        cur.execute(
+            "UPDATE dbo.DonHang SET TrangThai = 'CHO_PHA_CHE', NgayCapNhat = SYSDATETIME() "
+            "WHERE DonHangID = ? AND TrangThai = 'MOI'",
+            (don["DonHangID"],),
+        )
         conn.commit()
         return {
             "ThanhToan": _doc_thanh_toan(cur, thanh_toan_id),

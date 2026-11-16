@@ -71,6 +71,7 @@ const DIEN_GIAI_LOI = [
   ["trang thai don khong hop le", "Tình trạng đơn không hợp lệ."],
   ["huy don phai kem ly do", "Vui lòng huỷ đơn kèm lý do."],
   ["khong the chuyen don sang trang thai nay", "Đơn vừa được người khác cập nhật. Vui lòng tải lại."],
+  ["can thanh toan thanh cong truoc khi pha che va phuc vu", "Vui lòng xác nhận thanh toán tại quầy trước khi pha chế và phục vụ."],
   ["ly do huy la bat buoc", "Vui lòng nhập lý do huỷ đơn."],
   ["don hang da huy truoc do", "Đơn này đã được huỷ trước đó."],
   ["don da hoan thanh, khong the huy", "Đơn đã hoàn thành nên không huỷ được. Nếu khách trả lại, hãy hoàn tiền."],
@@ -270,10 +271,10 @@ function maDoiTinhTrang(dangLam) {
 /* Ma tinh trang don hang / thanh toan -> nhan + mau huy hieu. Chi dung trong file nay
    va qua cac ham ben duoi, template khong viet ma truc tiep. */
 const TINH_TRANG_DON = {
-  MOI: {nhan: "Mới tạo", mau: "badge-info"},
+  MOI: {nhan: "Chờ thanh toán", mau: "badge-info"},
   CHO_PHA_CHE: {nhan: "Chờ pha chế", mau: "badge-wait"},
   DANG_PHA_CHE: {nhan: "Đang pha chế", mau: "badge-wait"},
-  HOAN_THANH: {nhan: "Hoàn thành", mau: "badge-on"},
+  HOAN_THANH: {nhan: "Đã phục vụ", mau: "badge-on"},
   DA_HUY: {nhan: "Đã huỷ", mau: "badge-off"},
 };
 
@@ -281,7 +282,7 @@ const TINH_TRANG_DON = {
 const BUOC_TIEP_DON = {
   MOI: {ma: "CHO_PHA_CHE", nut: "Gửi pha chế"},
   CHO_PHA_CHE: {ma: "DANG_PHA_CHE", nut: "Bắt đầu pha"},
-  DANG_PHA_CHE: {ma: "HOAN_THANH", nut: "Hoàn thành đơn"},
+  DANG_PHA_CHE: {ma: "HOAN_THANH", nut: "Đã phục vụ đồ uống"},
 };
 
 const TINH_TRANG_THU_TIEN = {
@@ -313,7 +314,8 @@ function huyHieu(bang, ma) {
 
 function huyHieuDon(ma) { return huyHieu(TINH_TRANG_DON, ma); }
 function huyHieuThuTien(ma) { return huyHieu(TINH_TRANG_THU_TIEN, ma); }
-function buocTiepDon(ma) { return BUOC_TIEP_DON[ma] || null; }
+function duocPhaChe(don) { return !!don && don.TrangThaiThanhToan === "THANH_CONG"; }
+function buocTiepDon(don) { return duocPhaChe(don) ? BUOC_TIEP_DON[don.TrangThai] || null : null; }
 function nhanHinhThuc(ma) { return HINH_THUC_THANH_TOAN[ma] || "Khác"; }
 function nhanHoaDon(ma) { return TINH_TRANG_HOA_DON[ma] || "Không rõ"; }
 function canMaGiaoDich(ma) { return ma !== "TIEN_MAT"; }
@@ -420,7 +422,8 @@ function daCoHoaDon(don) {
 }
 /** Don dang giu tien cua khach (huy thi phai hoan). */
 function donConGiuTien(don) {
-  return don && ["THANH_CONG", "HOAN_MOT_PHAN"].includes(don.TrangThaiThanhToan);
+  return don && Number(don.ThanhTien) > 0
+    && ["THANH_CONG", "HOAN_MOT_PHAN"].includes(don.TrangThaiThanhToan);
 }
 
 /** Don con mo (chua hoan thanh / chua huy). */
@@ -431,7 +434,8 @@ function donDaHuy(don) { return don && don.TrangThai === "DA_HUY"; }
 function chuaThuTien(don) { return don && don.TrangThaiThanhToan === "CHUA_THANH_TOAN"; }
 function thanhToanDangCho(tt) { return tt && tt.TrangThai === "CHO_XAC_NHAN"; }
 function thanhToanHoanDuoc(tt) {
-  return tt && (tt.TrangThai === "THANH_CONG" || tt.TrangThai === "HOAN_MOT_PHAN");
+  return tt && Number(tt.SoTien) > Number(tt.SoTienDaHoan || 0)
+    && (tt.TrangThai === "THANH_CONG" || tt.TrangThai === "HOAN_MOT_PHAN");
 }
 
 /** Danh sach lua chon {ma, nhan} de dung cho select / radio. */
