@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>{% if hd %}Hoá đơn {{ hd.MaHoaDon }}{% else %}Hoá đơn{% endif %} - Cà Phê Việt</title>
+  <style>
+    body { margin: 0; background: #f4efe7; color: #000; font-family: "Consolas", "Courier New", monospace; }
+    .paper {
+      width: 76mm; margin: 18px auto; background: #fff; padding: 14px 12px;
+      font-size: 12.5px; line-height: 1.5; box-shadow: 0 4px 18px rgba(0, 0, 0, 0.08);
+    }
+    .c { text-align: center; }
+    .shop { font-size: 17px; font-weight: 700; }
+    .row { display: flex; justify-content: space-between; gap: 8px; }
+    .line { border-top: 1px dashed #000; margin: 7px 0; }
+    .sub { font-size: 11.5px; }
+    .grand { font-weight: 700; font-size: 14.5px; }
+    .actions { text-align: center; margin: 0 0 24px; }
+    .actions button { font: inherit; padding: 9px 22px; cursor: pointer; }
+    @media print {
+      body { background: #fff; }
+      .paper { margin: 0; width: auto; box-shadow: none; }
+      .actions { display: none; }
+      @page { margin: 4mm; }
+    }
+  </style>
+</head>
+<body>
+{% if loi %}
+  <div class="paper c"><p>{{ loi }}</p></div>
+{% else %}
+  {# Nhan hien thi cho ma he thong - khong in ma ra giay. #}
+  {% set HINH_THUC = {'TIEN_MAT': 'Tiền mặt', 'CHUYEN_KHOAN': 'Chuyển khoản', 'THE': 'Quẹt thẻ'} %}
+  {% set TINH_TRANG = {'DA_THANH_TOAN': 'Đã thanh toán', 'HOAN_MOT_PHAN': 'Đã hoàn một phần', 'DA_HOAN_TIEN': 'Đã hoàn tiền'} %}
+  <div class="paper">
+    <div class="c shop">Cà Phê Việt</div>
+    <div class="c">HOÁ ĐƠN THANH TOÁN</div>
+    <div class="line"></div>
+    <div class="row"><span>Số hoá đơn</span><span>{{ hd.MaHoaDon }}</span></div>
+    <div class="row"><span>Đơn hàng</span><span>{{ hd.MaDonHang }}</span></div>
+    <div class="row"><span>Thời gian</span><span>{{ hd.NgayLap|thoi_gian }}</span></div>
+    {% if hd.NguoiTao %}<div class="row"><span>Thu ngân</span><span>{{ hd.NguoiTao }}</span></div>{% endif %}
+    <div class="line"></div>
+    {% for c in hd.ChiTiet %}
+      <div>{{ c.TenMon }}</div>
+      {% if c.GhiChu %}<div class="sub">({{ c.GhiChu }})</div>{% endif %}
+      <div class="row sub"><span>{{ c.SoLuong }} x {{ c.DonGia|tien }}</span><span>{{ c.ThanhTien|tien }}</span></div>
+    {% endfor %}
+    <div class="line"></div>
+    <div class="row"><span>Tạm tính</span><span>{{ hd.TongTien|tien }}</span></div>
+    {% if hd.GiamGia and hd.GiamGia > 0 %}
+      <div class="row"><span>Giảm giá</span><span>−{{ hd.GiamGia|tien }}</span></div>
+    {% endif %}
+    <div class="row grand"><span>TỔNG CỘNG</span><span>{{ hd.ThanhTien|tien }}</span></div>
+    {% if hd.ThanhToan %}
+      <div class="row"><span>Hình thức</span><span>{{ HINH_THUC.get(hd.ThanhToan.PhuongThuc, 'Khác') }}</span></div>
+    {% endif %}
+    {% if hd.SoTienDaHoan and hd.SoTienDaHoan > 0 %}
+      <div class="row"><span>Đã hoàn lại</span><span>{{ hd.SoTienDaHoan|tien }}</span></div>
+    {% endif %}
+    <div class="row"><span>Tình trạng</span><span>{{ TINH_TRANG.get(hd.TrangThai, 'Đã thanh toán') }}</span></div>
+    <div class="line"></div>
+    <div class="c">Cảm ơn quý khách. Hẹn gặp lại!</div>
+  </div>
+  <div class="actions"><button type="button" onclick="window.print()">In hoá đơn</button></div>
+{% endif %}
+</body>
+</html>

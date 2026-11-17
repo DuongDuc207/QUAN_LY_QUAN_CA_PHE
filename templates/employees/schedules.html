@@ -1,0 +1,346 @@
+{% extends "layout.html" %}
+{% block title %}Ca làm và lịch làm - Cà Phê Việt{% endblock %}
+{% block head %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/sprint4.css', v=1) }}">
+{% endblock %}
+{% block content %}
+{% set q = user.quyens or [] %}
+{% set co_quan_ly = 'employee.manage' in q %}
+{% set xem_het = 'employee.view' in q %}
+
+<div class="page-head pos-head">
+  <div>
+    <h2>{{ 'Ca làm và lịch làm' if xem_het else 'Lịch làm của tôi' }}</h2>
+    <p class="muted">{{ 'Xếp nhân viên vào ca theo ngày, đổi ca và chấm công.' if xem_het else 'Các ca bạn được xếp trong tuần.' }}</p>
+  </div>
+  {% if co_quan_ly %}
+    <div class="kho-head-nut">
+      <button type="button" class="btn-outline" id="btn-ca">Quản lý ca làm</button>
+      <button type="button" id="btn-xep">+ Xếp lịch</button>
+    </div>
+  {% endif %}
+</div>
+
+<div class="toolbar">
+  <button type="button" class="btn-outline" id="tuan-truoc" aria-label="Tuần trước">‹</button>
+  <label class="kho-loc-ngay">Tuần từ <input type="date" id="tu-ngay" class="filter-select"></label>
+  <button type="button" class="btn-outline" id="tuan-sau" aria-label="Tuần sau">›</button>
+  <button type="button" class="btn-outline" id="tuan-nay">Tuần này</button>
+  {% if xem_het %}
+    <select id="loc-nv" class="filter-select" aria-label="Lọc theo nhân viên"><option value="">Tất cả nhân viên</option></select>
+  {% endif %}
+</div>
+
+<div id="page-error" class="alert error hidden"></div>
+<div class="lich-tuan" id="lich-tuan" aria-live="polite"><p class="muted">Đang tải...</p></div>
+
+{% if co_quan_ly %}
+<!-- Xep / sua lich -->
+<div class="modal hidden" id="modal-lich" role="dialog" aria-modal="true" aria-labelledby="lich-title">
+  <div class="modal-card">
+    <div class="modal-head">
+      <h3 id="lich-title">Xếp lịch</h3>
+      <button type="button" class="modal-close" data-dong-modal="modal-lich" aria-label="Đóng">×</button>
+    </div>
+    <form id="lich-form" novalidate>
+      <div class="modal-body">
+        <div id="lich-error" class="alert error hidden" role="alert"></div>
+        <input type="hidden" name="id">
+        <label id="lich-nv-wrap">Nhân viên
+          <select name="nhan_vien_id" id="lich-nv" required></select>
+        </label>
+        <p class="muted hidden" id="lich-nv-ten"></p>
+        <div class="form-row">
+          <label>Ca
+            <select name="ca_lam_viec_id" id="lich-ca" required></select>
+          </label>
+          <label>Ngày
+            <input type="date" name="ngay_lam" required>
+          </label>
+        </div>
+        <label>Ghi chú
+          <input type="text" name="ghi_chu" maxlength="255">
+        </label>
+      </div>
+      <div class="modal-foot" id="lich-foot">
+        <button type="button" class="btn-outline" data-dong-modal="modal-lich">Đóng</button>
+        <button type="submit" id="btn-luu-lich">Lưu</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- Ca lam -->
+<div class="modal hidden" id="modal-ca" role="dialog" aria-modal="true" aria-labelledby="ca-title">
+  <div class="modal-card modal-wide">
+    <div class="modal-head">
+      <h3 id="ca-title">Ca làm</h3>
+      <button type="button" class="modal-close" data-dong-modal="modal-ca" aria-label="Đóng">×</button>
+    </div>
+    <div class="modal-body">
+      <div id="ca-error" class="alert error hidden" role="alert"></div>
+      <table class="line-table" id="ca-table"><tbody></tbody></table>
+      <form id="ca-form" class="ca-form" novalidate>
+        <h4 class="sub-title" id="ca-form-title">Thêm ca</h4>
+        <input type="hidden" name="id">
+        <div class="form-row">
+          <label>Tên ca <input type="text" name="ten_ca" maxlength="50" required placeholder="Ca sáng"></label>
+          <label>Bắt đầu <input type="time" name="gio_bat_dau" required></label>
+          <label>Kết thúc <input type="time" name="gio_ket_thuc" required></label>
+        </div>
+        <label>Mô tả <input type="text" name="mo_ta" maxlength="255"></label>
+        <label class="kho-check"><input type="checkbox" name="trang_thai" checked> Đang dùng</label>
+        <div class="modal-foot" style="padding:12px 0 0">
+          <button type="button" class="btn-outline" id="ca-moi">Thêm ca mới</button>
+          <button type="submit" id="btn-luu-ca">Lưu ca</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+{% endif %}
+{% endblock %}
+
+{% block scripts %}
+{% set q = user.quyens or [] %}
+{% set co_quan_ly = 'employee.manage' in q %}
+{% set xem_het = 'employee.view' in q %}
+<script>
+  const CO_QUAN_LY = {{ 'true' if co_quan_ly else 'false' }};
+  const XEM_HET = {{ 'true' if xem_het else 'false' }};
+  const $ = (id) => document.getElementById(id);
+  const vung = $("lich-tuan");
+  let dsCa = [];
+  let dsLich = [];
+
+  const fmt = (d) => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+  const cong = (s, n) => { const d = new Date(s + "T00:00:00"); d.setDate(d.getDate() + n); return fmt(d); };
+  const dauTuan = (d) => { const x = new Date(d); x.setDate(x.getDate() - ((x.getDay() + 6) % 7)); return fmt(x); };
+  const thu = (s) => new Date(s + "T00:00:00").toLocaleDateString("vi-VN", {weekday: "long", day: "2-digit", month: "2-digit"});
+
+  function veTuan() {
+    const tu = $("tu-ngay").value;
+    const homNay = ngayHomNay();
+    const cot = [];
+    for (let i = 0; i < 7; i++) {
+      const ngay = cong(tu, i);
+      const cua = dsLich.filter((l) => l.NgayLam === ngay);
+      cot.push(`<div class="lich-ngay${ngay === homNay ? " hom-nay" : ""}">
+        <h4>${escapeHtml(thu(ngay))}</h4>
+        ${cua.length ? cua.map((l) => `<button type="button" class="lich-o${lichDaHuy(l) ? " da-huy" : ""}" data-lich="${l.LichLamViecID}"
+            ${CO_QUAN_LY ? "" : "disabled"} aria-label="${escapeHtml(l.HoTen)}, ${escapeHtml(l.TenCa)}">
+            <span class="lich-gio">${l.GioBatDau} – ${l.GioKetThuc}</span>
+            <span class="lich-ten">${escapeHtml(XEM_HET ? l.HoTen : l.TenCa)}</span>
+            ${XEM_HET ? `<span class="cell-sub">${escapeHtml(l.TenCa)}</span>` : ""}
+            ${huyHieuLich(l.TrangThai)}
+          </button>`).join("") : `<p class="muted small">Không có ca</p>`}
+        ${CO_QUAN_LY && ngay >= homNay ? `<button type="button" class="btn-link small" data-them="${ngay}">+ Xếp</button>` : ""}
+      </div>`);
+    }
+    vung.innerHTML = cot.join("");
+  }
+
+  async function load() {
+    $("page-error").classList.add("hidden");
+    const tu = $("tu-ngay").value;
+    const p = new URLSearchParams({tu_ngay: tu, den_ngay: cong(tu, 6)});
+    const loc = $("loc-nv");
+    if (loc && loc.value) p.set("nhan_vien_id", loc.value);
+    const r = await apiGoi("GET", "/api/v1/workSchedules?" + p.toString());
+    if (!r.ok) {
+      if (kiemTraHetPhien(r.status)) return;
+      $("page-error").textContent = thongBaoLoi(r.status, "lịch làm");
+      $("page-error").classList.remove("hidden");
+      vung.innerHTML = "";
+      return;
+    }
+    dsLich = r.data.items;
+    veTuan();
+  }
+
+  async function napCa() {
+    const r = await apiGoi("GET", "/api/v1/shifts");
+    dsCa = r.ok ? r.data : [];
+  }
+
+  async function napNhanVien() {
+    if (!XEM_HET) return [];
+    const r = await apiGoi("GET", "/api/v1/employees?per_page=100");
+    return r.ok ? r.data.items : [];
+  }
+
+  /* ===== Xep / sua lich ===== */
+  let dsNv = [];
+  function moXep(ngay) {
+    const f = $("lich-form");
+    f.reset();
+    f.id.value = "";
+    $("lich-error").classList.add("hidden");
+    $("lich-title").textContent = "Xếp lịch";
+    $("lich-nv-wrap").classList.remove("hidden");
+    $("lich-nv-ten").classList.add("hidden");
+    $("lich-nv").innerHTML = dsNv.filter(nhanVienDangLam).map((n) =>
+      `<option value="${n.NhanVienID}">${escapeHtml(n.HoTen)}${n.ChucVu ? " – " + escapeHtml(n.ChucVu) : ""}</option>`).join("");
+    $("lich-ca").innerHTML = dsCa.filter((c) => c.TrangThai).map((c) =>
+      `<option value="${c.CaLamViecID}">${escapeHtml(c.TenCa)} (${c.GioBatDau} – ${c.GioKetThuc})</option>`).join("");
+    f.ngay_lam.value = ngay || ngayHomNay();
+    f.ngay_lam.min = ngayHomNay();
+    $("lich-foot").innerHTML = `<button type="button" class="btn-outline" data-dong-modal="modal-lich">Đóng</button>
+      <button type="submit" id="btn-luu-lich">Xếp lịch</button>`;
+    if (!dsNv.some(nhanVienDangLam) || !dsCa.some((c) => c.TrangThai)) {
+      $("lich-error").textContent = !dsCa.some((c) => c.TrangThai)
+        ? "Chưa có ca làm nào. Hãy thêm ca trong mục Quản lý ca làm."
+        : "Chưa có nhân viên đang làm. Hãy thêm ở trang Hồ sơ nhân viên.";
+      $("lich-error").classList.remove("hidden");
+    }
+    moModal("modal-lich");
+  }
+
+  function moLich(l) {
+    const f = $("lich-form");
+    f.reset();
+    f.id.value = l.LichLamViecID;
+    $("lich-error").classList.add("hidden");
+    $("lich-title").textContent = `${l.HoTen} – ${thu(l.NgayLam)}`;
+    $("lich-nv-wrap").classList.add("hidden");
+    $("lich-nv-ten").textContent = "Tình trạng: ";
+    $("lich-nv-ten").insertAdjacentHTML("beforeend", huyHieuLich(l.TrangThai));
+    $("lich-nv-ten").classList.remove("hidden");
+    $("lich-ca").innerHTML = dsCa.filter((c) => c.TrangThai || c.CaLamViecID === l.CaLamViecID).map((c) =>
+      `<option value="${c.CaLamViecID}">${escapeHtml(c.TenCa)} (${c.GioBatDau} – ${c.GioKetThuc})</option>`).join("");
+    $("lich-ca").value = String(l.CaLamViecID);
+    f.ngay_lam.value = l.NgayLam;
+    f.ngay_lam.min = "";
+    f.ghi_chu.value = l.GhiChu || "";
+    const conXep = lichConXep(l);
+    const daToiNgay = l.NgayLam <= ngayHomNay();
+    $("lich-ca").disabled = !conXep;
+    f.ngay_lam.disabled = !conXep;
+    const nut = [`<button type="button" class="btn-outline" data-dong-modal="modal-lich">Đóng</button>`];
+    if (!lichDaHuy(l)) {
+      nut.unshift(`<button type="button" class="btn-outline btn-danger" data-viec="huy">Huỷ lịch</button>`);
+      if (daToiNgay) {
+        nut.splice(1, 0, `<button type="button" class="btn-outline" data-viec="vang">Vắng</button>`,
+          `<button type="button" class="btn-outline" data-viec="diLam">Đã đi làm</button>`);
+      }
+      nut.push(`<button type="submit" id="btn-luu-lich">Lưu</button>`);
+    }
+    $("lich-foot").innerHTML = nut.join("");
+    moModal("modal-lich");
+  }
+
+  async function guiLich(body) {
+    const f = $("lich-form");
+    const err = $("lich-error");
+    err.classList.add("hidden");
+    const id = f.id.value;
+    const r = id ? await apiGoi("PUT", `/api/v1/workSchedules/${id}`, body) : await apiGoi("POST", "/api/v1/workSchedules", body);
+    if (!r.ok) {
+      if (kiemTraHetPhien(r.status)) return;
+      err.textContent = r.loi;
+      err.classList.remove("hidden");
+      return;
+    }
+    dongModal("modal-lich");
+    hienToast(id ? "Đã cập nhật lịch." : "Đã xếp lịch.");
+    load();
+  }
+
+  if (CO_QUAN_LY) {
+    $("lich-form").addEventListener("submit", (e) => {
+      e.preventDefault();
+      const f = $("lich-form");
+      const body = {ca_lam_viec_id: $("lich-ca").value, ngay_lam: f.ngay_lam.value, ghi_chu: f.ghi_chu.value.trim()};
+      if (!f.id.value) body.nhan_vien_id = $("lich-nv").value;
+      guiLich(body);
+    });
+    $("lich-foot").addEventListener("click", async (e) => {
+      const b = e.target.closest("button[data-viec]");
+      if (!b) return;
+      if (b.dataset.viec === "huy" && !(await xacNhan("Huỷ lịch làm này?",
+          {nhanDongY: "Huỷ lịch", nguyHiem: true}))) return;
+      guiLich({trang_thai: maViecLich(b.dataset.viec)});
+    });
+    vung.addEventListener("click", (e) => {
+      const o = e.target.closest("button[data-lich]");
+      if (o) { const l = dsLich.find((x) => String(x.LichLamViecID) === o.dataset.lich); if (l) moLich(l); return; }
+      const t = e.target.closest("button[data-them]");
+      if (t) moXep(t.dataset.them);
+    });
+    $("btn-xep").addEventListener("click", () => moXep());
+
+    /* ===== Ca lam ===== */
+    const caForm = $("ca-form");
+    function veCa() {
+      $("ca-table").querySelector("tbody").innerHTML = dsCa.length ? dsCa.map((c) => `<tr>
+          <td><div class="cell-name">${escapeHtml(c.TenCa)}</div>${c.MoTa ? `<div class="cell-sub">${escapeHtml(c.MoTa)}</div>` : ""}</td>
+          <td>${c.GioBatDau} – ${c.GioKetThuc}${c.QuaDem ? ` <span class="cell-sub">(qua đêm)</span>` : ""}</td>
+          <td><span class="badge ${c.TrangThai ? "badge-on" : "badge-off"}">${c.TrangThai ? "Đang dùng" : "Ngừng dùng"}</span></td>
+          <td class="col-actions"><button type="button" class="btn-icon" data-sua-ca="${c.CaLamViecID}">Sửa</button></td>
+        </tr>`).join("") : `<tr><td class="muted">Chưa có ca nào.</td></tr>`;
+    }
+    function moFormCa(c) {
+      caForm.reset();
+      caForm.id.value = c ? c.CaLamViecID : "";
+      $("ca-form-title").textContent = c ? `Sửa ${c.TenCa}` : "Thêm ca";
+      if (c) {
+        caForm.ten_ca.value = c.TenCa;
+        caForm.gio_bat_dau.value = c.GioBatDau;
+        caForm.gio_ket_thuc.value = c.GioKetThuc;
+        caForm.mo_ta.value = c.MoTa || "";
+        caForm.trang_thai.checked = Boolean(c.TrangThai);
+      }
+    }
+    $("btn-ca").addEventListener("click", async () => {
+      await napCa();
+      veCa();
+      moFormCa(null);
+      $("ca-error").classList.add("hidden");
+      moModal("modal-ca");
+    });
+    $("ca-moi").addEventListener("click", () => moFormCa(null));
+    $("ca-table").addEventListener("click", (e) => {
+      const b = e.target.closest("button[data-sua-ca]");
+      if (b) moFormCa(dsCa.find((c) => String(c.CaLamViecID) === b.dataset.suaCa));
+    });
+    caForm.addEventListener("submit", async (e) => {
+      e.preventDefault();
+      const err = $("ca-error");
+      err.classList.add("hidden");
+      const id = caForm.id.value;
+      const body = {ten_ca: caForm.ten_ca.value.trim(), gio_bat_dau: caForm.gio_bat_dau.value,
+        gio_ket_thuc: caForm.gio_ket_thuc.value, mo_ta: caForm.mo_ta.value.trim(), trang_thai: caForm.trang_thai.checked};
+      const r = id ? await apiGoi("PUT", `/api/v1/shifts/${id}`, body) : await apiGoi("POST", "/api/v1/shifts", body);
+      if (!r.ok) {
+        if (kiemTraHetPhien(r.status)) return;
+        err.textContent = r.loi;
+        err.classList.remove("hidden");
+        return;
+      }
+      hienToast(id ? "Đã cập nhật ca." : "Đã thêm ca.");
+      await napCa();
+      veCa();
+      moFormCa(null);
+      load();
+    });
+  }
+
+  /* ===== Dieu huong tuan ===== */
+  $("tuan-truoc").addEventListener("click", () => { $("tu-ngay").value = cong($("tu-ngay").value, -7); load(); });
+  $("tuan-sau").addEventListener("click", () => { $("tu-ngay").value = cong($("tu-ngay").value, 7); load(); });
+  $("tuan-nay").addEventListener("click", () => { $("tu-ngay").value = dauTuan(new Date()); load(); });
+  $("tu-ngay").addEventListener("change", () => { if ($("tu-ngay").value) load(); });
+
+  (async () => {
+    $("tu-ngay").value = dauTuan(new Date());
+    const [, nv] = await Promise.all([napCa(), napNhanVien()]);
+    dsNv = nv;
+    const loc = $("loc-nv");
+    if (loc) {
+      nv.forEach((n) => loc.add(new Option(n.HoTen, n.NhanVienID)));
+      loc.addEventListener("change", load);
+    }
+    load();
+  })();
+</script>
+{% endblock %}

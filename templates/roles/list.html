@@ -1,0 +1,129 @@
+{% extends "layout.html" %}
+{% block title %}Phân quyền - Cà Phê Việt{% endblock %}
+{% block content %}
+<div class="page-head">
+  <h2>Phân quyền</h2>
+  <p class="muted">Chọn những việc mà mỗi vị trí công việc được phép làm.</p>
+</div>
+
+<div id="page-error" class="alert error hidden"></div>
+
+<div class="cards" id="role-cards">
+  <div class="card"><p class="muted">Đang tải...</p></div>
+</div>
+
+<!-- Hop thoai chinh quyen -->
+<div class="modal hidden" id="modal-perm" role="dialog" aria-modal="true" aria-labelledby="perm-title">
+  <div class="modal-card modal-wide">
+    <div class="modal-head">
+      <h3 id="perm-title">Phân quyền</h3>
+      <button type="button" class="modal-close" data-dong-modal="modal-perm" aria-label="Đóng">×</button>
+    </div>
+    <form id="perm-form">
+      <div class="modal-body">
+        <div id="perm-error" class="alert error hidden"></div>
+        <input type="hidden" name="id">
+        <p class="muted small" style="margin:0 0 10px">Tích vào những việc vị trí này được phép làm.</p>
+        <div class="perm-list" id="perm-list"></div>
+      </div>
+      <div class="modal-foot">
+        <button type="button" class="btn-outline" data-dong-modal="modal-perm">Huỷ</button>
+        <button type="submit" id="btn-save-perm">Lưu thay đổi</button>
+      </div>
+    </form>
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+  const pageError = document.getElementById("page-error");
+  const permForm = document.getElementById("perm-form");
+  const permError = document.getElementById("perm-error");
+  let dsQuyen = [];
+  let dsViTri = [];
+
+  function renderCards() {
+    const box = document.getElementById("role-cards");
+    if (!dsViTri.length) {
+      box.innerHTML = `<div class="card"><p class="muted">Chưa có vị trí công việc nào.</p></div>`;
+      return;
+    }
+    box.innerHTML = dsViTri.map((v) => {
+      const quyens = v.Quyens || [];
+      const chips = quyens.length
+        ? quyens.map((q) => `<span class="badge badge-role">${escapeHtml(nhanQuyen(q))}</span>`).join("")
+        : `<span class="muted small">Chưa được phép làm gì</span>`;
+      return `<div class="card">
+        <span class="card-icon">🔑</span>
+        <h3>${escapeHtml(v.TenVaiTro)}</h3>
+        <p>${escapeHtml(v.MoTa || "")}</p>
+        <div class="chip-group" style="justify-content:flex-start">${chips}</div>
+        <button type="button" class="btn-outline btn-self" data-sua="${v.VaiTroID}">Chỉnh quyền</button>
+      </div>`;
+    }).join("");
+  }
+
+  async function load() {
+    pageError.classList.add("hidden");
+    const rQuyen = await apiGoi("GET", "/api/v1/permissions");
+    const rViTri = await apiGoi("GET", "/api/v1/roles");
+    if (!rViTri.ok || !rQuyen.ok) {
+      const r = !rViTri.ok ? rViTri : rQuyen;
+      if (kiemTraHetPhien(r.status)) return;
+      pageError.textContent = thongBaoLoi(r.status, "thông tin phân quyền");
+      pageError.classList.remove("hidden");
+      document.getElementById("role-cards").innerHTML = "";
+      return;
+    }
+    dsQuyen = rQuyen.data;
+    dsViTri = rViTri.data;
+    renderCards();
+  }
+
+  function moFormQuyen(id) {
+    const v = dsViTri.find((x) => String(x.VaiTroID) === String(id));
+    if (!v) return;
+    const dangCo = new Set(v.Quyens || []);
+    permForm.id.value = v.VaiTroID;
+    document.getElementById("perm-title").textContent = "Phân quyền: " + v.TenVaiTro;
+    document.getElementById("perm-list").innerHTML = dsQuyen.map((q) => `
+      <label class="perm-item">
+        <input type="checkbox" value="${q.QuyenID}" data-ten="${escapeHtml(q.TenQuyen)}"
+          ${dangCo.has(q.TenQuyen) ? "checked" : ""}>
+        ${escapeHtml(nhanQuyen(q.TenQuyen))}
+      </label>`).join("");
+    permError.classList.add("hidden");
+    moModal("modal-perm");
+  }
+
+  permForm.addEventListener("submit", async (e) => {
+    e.preventDefault();
+    permError.classList.add("hidden");
+    const id = permForm.id.value;
+    const ids = [...document.querySelectorAll("#perm-list input:checked")].map((i) => Number(i.value));
+
+    const btn = document.getElementById("btn-save-perm");
+    btn.disabled = true;
+    const r = await apiGoi("PUT", `/api/v1/roles/${id}/permissions`, {quyen_ids: ids});
+    btn.disabled = false;
+
+    if (!r.ok) {
+      if (kiemTraHetPhien(r.status)) return;
+      permError.textContent = r.loi;
+      permError.classList.remove("hidden");
+      return;
+    }
+    dongModal("modal-perm");
+    hienToast("Đã cập nhật quyền cho vị trí này.");
+    load();
+  });
+
+  document.getElementById("role-cards").addEventListener("click", (e) => {
+    const b = e.target.closest("button");
+    if (b && b.dataset.sua) moFormQuyen(b.dataset.sua);
+  });
+
+  load();
+</script>
+{% endblock %}
