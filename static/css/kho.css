@@ -1,0 +1,205 @@
+/* Giao dien rieng cho trang Nguyen lieu va ton kho, Cong thuc pha che.
+   Tai su dung mau va lop co san trong style.css; chi them phan chua co. */
+
+/* Form.css dat margin-top cho moi o nhap; o tim kiem trong thanh cong cu khong can. */
+.kho-page .search-box input { margin-top: 0; }
+.kho-page .stat-row { margin-bottom: 20px; }
+
+.kho-head-nut { display: flex; gap: 10px; flex-wrap: wrap; }
+
+/* Mau canh bao dung chung cap mau voi huy hieu "sap het" (tuong phan >= 4.5:1) */
+.stat-value.kho-sap { color: #84560a; }
+.stat-value.kho-het { color: var(--cf-danger); }
+
+.kho-canh-bao {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+  background: #fbefd9;
+  color: #84560a;
+  border: 1px solid #ecd2a0;
+  font-weight: 600;
+}
+.kho-canh-bao-nut { display: flex; gap: 8px; flex-wrap: wrap; margin-left: auto; }
+.kho-canh-bao .btn-outline { color: #84560a; border-color: #84560a; padding: 6px 12px; font-size: 13px; }
+.kho-canh-bao .btn-outline:hover { background: #f5dfb5; color: #5f3c05; }
+
+/* Thanh cong cu */
+.kho-check {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 14px;
+  color: var(--cf-text);
+  cursor: pointer;
+  padding: 0 4px;
+}
+.kho-check input { width: 17px; height: 17px; margin: 0; accent-color: var(--cf-coffee); flex: none; }
+
+.kho-loc-ngay { display: inline-flex; align-items: center; gap: 8px; font-size: 14px; color: var(--cf-espresso); font-weight: 600; }
+.kho-loc-ngay .filter-select { cursor: text; }
+
+/* Bang ton kho / lich su */
+.kho-table tbody tr[data-id] { cursor: pointer; }
+.kho-table .row-actions { flex-wrap: wrap; white-space: normal; }
+.kho-table .badge-muted { margin-left: 6px; }
+.kho-gio { white-space: nowrap; }
+
+.kho-tang { color: #27694a; font-weight: 600; white-space: nowrap; }
+.kho-giam { color: #b23b3b; font-weight: 600; white-space: nowrap; }
+
+.kho-cuon { overflow-x: auto; }
+.modal-card.kho-modal-rong { max-width: 780px; }
+
+.kho-tom-tat {
+  background: var(--cf-surface-alt);
+  border-radius: var(--cf-radius-sm);
+  padding: 10px 14px;
+  margin: 0 0 16px;
+}
+
+.kho-page .note-box { margin: 0 0 14px; }
+
+.kho-trong { text-align: center; padding: 20px 10px; margin: 0; color: var(--cf-muted); }
+
+/* Chon don de tru kho */
+.kho-don-ds { display: grid; gap: 8px; max-height: 300px; overflow-y: auto; margin: 12px 0 4px; padding: 2px; }
+.kho-don {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  margin: 0;
+  padding: 10px 14px;
+  background: var(--cf-surface);
+  color: var(--cf-text);
+  border: 1.5px solid var(--cf-border);
+  border-radius: var(--cf-radius-sm);
+  text-align: left;
+  font-weight: 500;
+}
+.kho-don:hover { background: var(--cf-surface-alt); color: var(--cf-text); }
+.kho-don[aria-pressed="true"],
+.kho-don[aria-pressed="true"]:hover { border-color: var(--cf-coffee); background: var(--cf-caramel-soft); color: var(--cf-espresso); }
+.kho-don-ten { font-weight: 700; color: var(--cf-espresso); display: block; }
+.kho-don-phu { font-size: 13px; color: var(--cf-muted); display: block; }
+
+.kho-ket-qua .line-table { margin-bottom: 12px; }
+.kho-ket-qua a { color: var(--cf-coffee); font-weight: 600; text-decoration: underline; }
+.kho-ket-qua a:hover { color: var(--cf-espresso); }
+.kho-ket-qua a:focus-visible { outline: 2px solid var(--cf-coffee); outline-offset: 2px; border-radius: 2px; }
+
+/* ===== Cong thuc pha che ===== */
+.kho-chia {
+  display: grid;
+  grid-template-columns: 340px minmax(0, 1fr);
+  gap: 20px;
+  align-items: start;
+}
+
+.kho-trai {
+  background: var(--cf-surface);
+  border: 1px solid var(--cf-border);
+  border-radius: var(--cf-radius);
+  box-shadow: var(--cf-shadow-sm);
+  padding: 16px;
+  position: sticky;
+  top: 82px;
+}
+.kho-loc-mon { display: grid; gap: 8px; margin-bottom: 12px; }
+.kho-loc-mon .search-box { max-width: none; min-width: 0; }
+.kho-loc-mon .filter-select { width: 100%; min-width: 0; }
+.kho-dem { margin: 0 0 8px; font-size: 13px; }
+
+.kho-ds-mon { list-style: none; margin: 0; padding: 2px; display: grid; gap: 6px; max-height: 62vh; overflow-y: auto; }
+.kho-mon {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 4px 8px;
+  width: 100%;
+  margin: 0;
+  padding: 10px 12px;
+  background: var(--cf-surface);
+  color: var(--cf-text);
+  border: 1.5px solid var(--cf-border);
+  border-radius: var(--cf-radius-sm);
+  text-align: left;
+  font-weight: 500;
+}
+.kho-mon:hover { background: var(--cf-surface-alt); color: var(--cf-text); }
+.kho-mon[aria-pressed="true"],
+.kho-mon[aria-pressed="true"]:hover { border-color: var(--cf-coffee); background: var(--cf-caramel-soft); color: var(--cf-espresso); }
+.kho-mon-ten { font-weight: 650; color: var(--cf-espresso); flex: 1 1 100%; }
+.kho-mon-phu { font-size: 12.5px; color: var(--cf-muted); }
+.kho-mon .badge { font-size: 12px; padding: 2px 9px; }
+
+.kho-phai {
+  background: var(--cf-surface);
+  border: 1px solid var(--cf-border);
+  border-radius: var(--cf-radius);
+  box-shadow: var(--cf-shadow-sm);
+  padding: 22px;
+  min-height: 260px;
+}
+.kho-ct-dau { display: flex; justify-content: space-between; align-items: flex-start; gap: 14px; flex-wrap: wrap; margin-bottom: 16px; }
+.kho-ct-dau h3 { margin: 0 0 4px; font-size: 21px; }
+.kho-ct-dau p { margin: 0; }
+.kho-phan { max-width: 360px; margin-bottom: 18px; background: var(--cf-surface-alt); box-shadow: none; }
+
+.kho-ct-bang { width: 100%; border-collapse: collapse; font-size: 14.5px; }
+.kho-ct-bang th {
+  text-align: left;
+  background: var(--cf-surface-alt);
+  color: var(--cf-espresso);
+  font-weight: 600;
+  padding: 11px 14px;
+  border-bottom: 1px solid var(--cf-border);
+}
+.kho-ct-bang td { padding: 11px 14px; border-bottom: 1px solid var(--cf-border); vertical-align: top; }
+.kho-ct-bang tr:last-child td { border-bottom: none; }
+.kho-ct-bang .col-num { white-space: nowrap; }
+.kho-ct-khung { border: 1px solid var(--cf-border); border-radius: var(--cf-radius-sm); overflow-x: auto; }
+
+/* Lich su thay doi cong thuc */
+.kho-ls-ds { list-style: none; margin: 0 0 12px; padding: 0; display: grid; gap: 12px; }
+.kho-ls-muc { border: 1px solid var(--cf-border); border-radius: var(--cf-radius-sm); padding: 12px 14px; }
+.kho-ls-dau { display: flex; justify-content: space-between; gap: 10px; flex-wrap: wrap; }
+.kho-diff { list-style: none; margin: 10px 0 0; padding: 0; display: grid; gap: 6px; font-size: 14px; }
+.kho-diff .badge { margin-right: 6px; }
+
+/* Bo soan cong thuc */
+.kho-dong-tieude,
+.kho-dong-ct {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 200px 64px;
+  gap: 10px;
+  align-items: center;
+}
+.kho-dong-tieude { font-size: 13px; font-weight: 600; color: var(--cf-muted); margin-bottom: 6px; }
+.kho-dong-ct { margin-bottom: 10px; }
+.kho-dong-ct select,
+.kho-dong-ct input { margin-top: 0; }
+.kho-so { display: flex; align-items: center; gap: 8px; }
+.kho-dv { color: var(--cf-muted); font-size: 13.5px; min-width: 28px; white-space: nowrap; }
+.kho-dong-ct button,
+.kho-btn-phu { width: auto; margin: 0; }
+.kho-dong-ct button { padding: 6px 12px; font-size: 13px; justify-content: center; }
+.kho-btn-phu { padding: 8px 14px; font-size: 13.5px; margin: 4px 0 16px; }
+
+@media (max-width: 900px) {
+  .kho-chia { grid-template-columns: 1fr; }
+  .kho-trai { position: static; }
+  .kho-ds-mon { max-height: 320px; }
+}
+
+@media (max-width: 640px) {
+  .kho-table .row-actions { flex-wrap: nowrap; min-width: 400px; }
+  .kho-table th, .kho-table td { white-space: nowrap; }
+  .kho-dong-tieude { display: none; }
+  .kho-dong-ct { grid-template-columns: 1fr; padding-bottom: 10px; border-bottom: 1px dashed var(--cf-border); }
+  .kho-loc-ngay { width: 100%; justify-content: space-between; }
+}

@@ -1,0 +1,71 @@
+/* Login card */
+.login-card {
+  background: var(--cf-surface);
+  border: 1px solid var(--cf-border);
+  border-radius: 18px;
+  padding: 36px 34px;
+  width: 100%;
+  max-width: 400px;
+  box-shadow: 0 24px 60px rgba(63, 42, 27, 0.14);
+}
+
+.login-logo {
+  width: 58px;
+  height: 58px;
+  border-radius: 16px;
+  background: linear-gradient(135deg, #6f4a2a, #c08a43);
+  display: grid;
+  place-items: center;
+  font-size: 30px;
+  margin: 0 auto 16px;
+}
+
+.login-card h1 {
+  margin: 0 0 4px;
+  text-align: center;
+  font-size: 23px;
+  color: var(--cf-espresso);
+}
+
+.login-card .login-sub {
+  margin: 0 0 24px;
+  text-align: center;
+  color: var(--cf-muted);
+  font-size: 14px;
+}
+
+/* Form fields */
+form label {
+  display: block;
+  margin: 0 0 16px;
+  font-weight: 600;
+  font-size: 13.5px;
+  color: var(--cf-espresso);
+}
+
+input, select, textarea {
+  width: 100%;
+  padding: 11px 13px;
+  margin-top: 6px;
+  border: 1px solid var(--cf-border);
+  border-radius: var(--cf-radius-sm);
+  background: var(--cf-surface);
+  font-size: 14.5px;
+  font-family: inherit;
+  color: var(--cf-text);
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+input:focus, select:focus, textarea:focus {
+  outline: none;
+  border-color: var(--cf-caramel);
+  box-shadow: 0 0 0 3px rgba(192, 138, 67, 0.15);
+}
+
+form button {
+  width: 100%;
+  margin-top: 6px;
+  padding: 12px;
+  font-size: 15px;
+  justify-content: center;
+}
